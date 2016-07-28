@@ -12,10 +12,18 @@
   description = "An example package.",
   author = "Example Name <email@example.com>", -- note: email address not required!
   confVersion = 2,                             -- the version of this config format
+  -- NOTE: Anything below here is optional, depending on what a particular package needs to define.
   files = {
-    ["/local/location"] = "example.file"       -- this is retrieved from ROOT .. NAME .. "/" .. VERSION .. "/" .. FILE (as defined here)
+    ["/local/location"] = "example.file"   -- this is retrieved from ROOT .. NAME .. "/" .. VERSION .. "/" .. FILE (as defined here)
+  },
+  filesOnce = {
+    ["/local/location"] = "example.file"   -- same as files, but these will not overwrite an existing file
   },
   depends = {
     ["cc-paw"] = "0.4.0"   -- depends on a specific version (or compatible upgrade) of a package
-  }
+  },
+  preinst = [[]],  -- a script to execute before installing this package (return non-zero number and a message to indicate failure)
+  postinst = [[]], -- a script to execute after installing this package (return non-zero number and a message to indicate failure)
+  prerm = [[]],    -- a script to execute before removing this package (return non-zero number and a message to indicate failure)
+  postrm = [[]]    -- a script to execute after removing this package (return non-zero number and a message to indicate failure)
 }
