@@ -1,0 +1,35 @@
+v0.4.0
+- Complete rewrite.
+
+v0.3.1
+- Just fixes the critical bug in 0.3.0...
+v0.3.0
+- BUG: Syntax error completely breaking cc-paw...
+- Adds option to update to dev versions, hopefully rendering the kind of stupid
+  bugs that made me make this file a thing of the past.
+- Adds force install option. *shrugs*
+v0.2.3
+- Fixes upgrading, was an issue where a shallow copy was used where a deep copy
+  should have been used.
+v0.2.2
+- BUG: Upgrading broken again.
+- Fixes installing and removing assuming certain file lists existed when they
+  don't have to exist.
+- Adds messages to update/upgrade so you know it's working.
+v0.2.1
+- BUG: Remove assumes files exist.
+- BUG: Purge assumes files and config files exist.
+- BUG: Install assumes config files exist.
+- Fixes upgrading..like, really fixes it.
+- Adds dependency checking to removing/purging packages.
+- Note: Anything installed before this version with a dependency will not be
+  checked properly.
+v0.2.0
+- BUG: Cannot upgrade!
+- Warning: Does not check dependencies before removing or purging a package!
+- Adds "remove" files, which will be removed between versions if needed.
+- Adds "depends" list, a package can define dependencies here.
+v0.1.4
+- BUG: Cannot upgrade!
+- Initial release. Support for "files" and "config" files.
+- Metadata: name, title, author

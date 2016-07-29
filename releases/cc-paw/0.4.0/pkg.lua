@@ -2,10 +2,15 @@
   name = "cc-paw",
   title = "ComputerCraft Package Administration Worker",
   description = "A package manager for ComputerCraft.",
-  author = "Guard13007",
+  author = "Guard13007 <paul.liverman.iii@gmail.com>",
+  version = "0.4.0",
   confVersion = 2,
   files = {
-    ["/bin/cc-paw"] = "cc-paw.lua"
+    ["/bin/cc-paw"] = "bin.lua",
+    ["/lib/cc-paw.lua"] = "lib.lua",
+    ["/startup"] = "../common/startup.lua",
+    ["/autorun/FHS.lua"] = "../common/autorun.lua", --NOTE not sure if FHS is best name, maybe FHS-UNIX ?
+    ["/usr/man/cc-paw"] = "manual.txt"
   },
   filesOnce = {
     ["/etc/cc-paw/sources.list"] = "../common/sources.list"
