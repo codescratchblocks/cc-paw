@@ -16,21 +16,37 @@ local function p(...)
     end
 end
 
+local function e(msg)
+    local errFile = "/var/log/cc-paw-errors.log"
+    local file = fs.open(errFile, fs.exists(errFile) and 'a' or 'w')
+    file.write(msg.."\n")
+    file.close()
+    error(msg)
+end
+
+local function a(truthy, errMsg)
+    if truthy then
+        return truthy
+    else
+        e(errMsg)
+    end
+end
+
 -- open a file, error on failure
 local function open(file, mode)
     if mode == 'r' then
-        return assert(fs.open(file, mode), 'Could not open "'..file..'" for reading.')
+        return a(fs.open(file, mode), 'Could not open "'..file..'" for reading.')
     elseif mode == 'w' then
-        return assert(fs.open(file, mode), 'Cound not open "'..file..'" for writing.')
+        return a(fs.open(file, mode), 'Cound not open "'..file..'" for writing.')
     else
-        return assert(fs.open(file, mode), 'Could not open "'..file..'"')
+        return a(fs.open(file, mode), 'Could not open "'..file..'"')
     end
 end
 
 -- gets a file's content (as a string)
 local function get(url)
     --NOTE for now, assumes HTTP API must be used, in the future, local gets will be possible
-    local response = assert(http.get(url, {["User-Agent"] = "cc-paw "..ccpaw.v}), 'Error opening "' .. url .. '"')
+    local response = a(http.get(url, {["User-Agent"] = "cc-paw "..ccpaw.v}), 'Error opening "' .. url .. '"')
 
     local status = response.getResponseCode()
     if status == 200 then
@@ -38,7 +54,7 @@ local function get(url)
         response.close()
         return result
     else
-        error('GET ' .. url .. ' : ' .. status)
+        e('GET ' .. url .. ' : ' .. status)
     end
 end
 
@@ -51,7 +67,7 @@ function ccpaw.install(pkgName, version, force)
     end
 
     if fs.exists(iCache..pkgName) then
-        error("Package already installed.\n(Perhaps you meant to upgrade?)")
+        e("Package already installed.\n(Perhaps you meant to upgrade?)")
     end
 
     p "Reading sources..."
@@ -72,10 +88,10 @@ function ccpaw.install(pkgName, version, force)
         file.close()
     end
 
-    assert(sLine, 'Package not found.\n(Try "cc-paw update" first?)')
+    a(sLine, 'Package not found.\n(Try "cc-paw update" first?)')
 
     if version and not version ^ pkgVersion then
-        error(pkgName.." v"..version.." requested, but only v"..pkgVersion.." is available, and not compatible.")
+        e(pkgName.." v"..version.." requested, but only v"..pkgVersion.." is available, and not compatible.")
     end
 
     local file = open(sources, 'r')
@@ -89,7 +105,7 @@ function ccpaw.install(pkgName, version, force)
     local pkgData = get(root..pkgName.."/"..pkgVersion.."/pkg.lua")
     local package = textutils.unserialize(pkgData)
 
-    assert(package.confVersion == 2, "You must upgrade cc-paw to install this package.")
+    a(package.confVersion == 2, "You must upgrade cc-paw to install this package.")
 
     if package.depends then
         p "Installing dependencies for "..pkgName.."..."
@@ -106,10 +122,10 @@ function ccpaw.install(pkgName, version, force)
         ok, result, msg = pcall(loadstring(package.preinst)())
 
         if not ok then
-            error('Pre-install script errored: "'..result..'"\nAborting installation.')
+            e('Pre-install script errored: "'..result..'"\nAborting installation.')
         end
         if not result == 0 then
-            error('Pre-install script failed: "'..msg..'"\nAborting installation.')
+            e('Pre-install script failed: "'..msg..'"\nAborting installation.')
         end
     end
 
@@ -139,11 +155,11 @@ function ccpaw.install(pkgName, version, force)
         ok, result, msg = pcall(loadstring(package.postinst)())
 
         if not ok then
-            error('Post-install script errored: "'..result..'"\nAborting installation.')
+            e('Post-install script errored: "'..result..'"\nAborting installation.')
             --TODO undo changes ! (which means I can't use error!)
         end
         if not result == 0 then
-            error('Post-install script failed: "'..msg..'"\nAborting installation.')
+            e('Post-install script failed: "'..msg..'"\nAborting installation.')
             --TODO undo changes ! (which means I can't use error!)
         end
     end
