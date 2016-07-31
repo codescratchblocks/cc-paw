@@ -16,6 +16,7 @@ local function p(...)
     end
 end
 
+-- our own error function to log errors
 local function e(msg)
     local errFile = "/var/log/cc-paw-errors.log"
     local file = fs.open(errFile, fs.exists(errFile) and 'a' or 'w')
@@ -24,6 +25,7 @@ local function e(msg)
     error(msg)
 end
 
+-- our own assert to make sure our own error is used
 local function a(truthy, errMsg)
     if truthy then
         return truthy
@@ -41,6 +43,13 @@ local function open(file, mode)
     else
         return a(fs.open(file, mode), 'Could not open "'..file..'"')
     end
+end
+
+-- wrapper for basic file writing
+local function write(fName, data)
+    local file = open(fName, 'w')
+    file.write(data)
+    file.close()
 end
 
 -- gets a file's content (as a string)
@@ -132,9 +141,7 @@ function ccpaw.install(pkgName, version, force)
     if package.files then
         for fName, location in pairs(package.files) do
             local data = get(root..pkgName.."/"..pkgVersion.."/"..location)
-            local file = open(fName, 'w')
-            file.write(data)
-            file.close()
+            write(fName, data)
         end
     end
 
@@ -142,9 +149,7 @@ function ccpaw.install(pkgName, version, force)
         for fName, location in pairs(package.files) do
             if not fs.exists(fName) then
                 local data = get(root..pkgName.."/"..pkgVersion.."/"..location)
-                local file = open(fName, 'w')
-                file.write(data)
-                file.close()
+                write(fName, data)
             end
         end
     end
@@ -166,9 +171,7 @@ function ccpaw.install(pkgName, version, force)
 
     --TODO save iCache
     --fs.exists(iCache..pkgName) then
-    local file = open(iCache..pkgName, 'w')
-    file.write(pkgData)
-    file.close()
+    write(iCache..pkgName, pkgData)
 
     p pkgName.." installed."
 end
@@ -186,11 +189,8 @@ function ccpaw.update()
     local count = 1
 
     while line do
-        local data = get(line)
-        local list = open(sCache .. count, 'w')
-
-        list.write(data)
-        list.close()
+        local data = get(line)\
+        write(sCache..count, data)
 
         line = file.readLine()
         count = count + 1
