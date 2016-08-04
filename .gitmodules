@@ -1,3 +1,6 @@
 [submodule "semver/1.2.0"]
 	path = semver/1.2.0
-	url = git@github.com:kikito/semver.lua.git
+	url = https://github.com/kikito/semver.lua.git
+[submodule "semver/1.2.1"]
+	path = semver/1.2.1
+	url = https://github.com/kikito/semver.lua.git
