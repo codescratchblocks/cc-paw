@@ -23,6 +23,9 @@
   depends = {
     ["cc-paw"] = "0.4.0"   -- depends on a specific version (or compatible upgrade) of a package
   },
+  dependsExact = {         -- depends on EXACT version of a package
+    ["example"] = "1.0.0"
+  },
   preinst = [[]],  -- a script to execute before installing this package (return non-zero number and a message to abort)
   postinst = [[]], -- a script to execute after installing this package (return non-zero number and a message to indicate failure)
   prerm = [[]],    -- a script to execute before removing this package (return non-zero number and a message to abort)
