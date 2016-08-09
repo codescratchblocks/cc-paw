@@ -16,6 +16,6 @@
     ["/etc/cc-paw/sources.list"] = "../common/sources.list"
   },
   depends = {
-    ["semver"] = "1.2.0"
+    ["semver"] = "1.2.1"
   }
 }
