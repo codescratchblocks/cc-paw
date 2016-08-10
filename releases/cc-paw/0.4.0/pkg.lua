@@ -9,7 +9,7 @@
     ["/bin/cc-paw"] = "bin.lua",
     ["/lib/cc-paw.lua"] = "lib.lua",
     ["/startup"] = "../common/startup.lua",
-    ["/autorun/FHS.lua"] = "../common/autorun.lua", --NOTE not sure if FHS is best name, maybe FHS-UNIX ?
+    ["/autorun/fakeUnixFHS.lua"] = "../common/autorun.lua",
     ["/usr/man/cc-paw"] = "manual.txt"
   },
   filesOnce = {

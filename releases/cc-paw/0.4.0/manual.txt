@@ -1,1 +1,32 @@
-TODO copy from old repo, only what actually still exists!
+ComputerCraft Package Administration Worker v0.4.0
+
+Manages package installation, updates, and removals.
+
+Usage:
+
+ cc-paw install <package>
+ cc-paw remove <package>
+ cc-paw update
+ cc-paw upgrade
+ cc-paw [-v] [--version]
+
+Install:
+
+ Installs specified <package> if it exists in
+ cc-paw's package list. To update the package list,
+ run "cc-paw update".
+
+Remove:
+
+ Removes specified <package>.
+
+Update:
+
+ Updates the package list on this computer with the
+ list(s) specified in /etc/cc-paw/sources.list
+
+Upgrades:
+
+ Upgrades cc-paw if it is out of date.
+ OR
+ Upgrades all packages that have newer versions available.

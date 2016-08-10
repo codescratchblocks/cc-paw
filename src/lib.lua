@@ -69,29 +69,45 @@ end
 
 -- install a package by its name
 -- version is a string representing the version you want to install, optional
---TODO force option is about forcing an install of specified version, will attempt to use source where package is found, but specified version instead of latest
-function ccpaw.install(pkgName, version, force)
+-- options.force (bool) will allow installation of incompatible updates
+-- options.exact (bool) will force installation to attempt installing the exact specified version from whichever repo has a version
+-- options.root (string) will allow specifying where to install from (NOT IMPLEMENTED!)
+-- options.ignoreInst (bool) will ignore an already installed package instead of erroring
+function ccpaw.install(pkgName, version, options)
     if version then
         version = v(version)
     end
 
+    if not options then
+        options = {}
+    end
+
     if fs.exists(iCache..pkgName) then
-        e("Package already installed.\n(Perhaps you meant to upgrade?)")
+        if options.ignoreInst then
+            --TODO CHECK COMPATIBILITY (installed needs to be greater than requested and a compatible upgrade from requested)
+            --TODO CHECK EXACT COMPATIBILITY (if options.exact, then needs to be exactly equal version !!)
+            return true
+        else
+            e("Package already installed.\n(Perhaps you meant to upgrade?)")
+        end
     end
 
     p "Reading sources..."
 
+    -- root to grab files from, line of sources to read from, package version to install
     local root, sLine, pkgVersion
 
     for _, fName in ipairs(fs.list(sCache)) do
         local file = open(sCache .. fName, 'r')
 
         local line = file.readLine()
+        --NOTE see how a source lower in the sources list is chosen over one higher in the list !
         while line do
             if line:sub(1, line:find("=")-1) == pkgName then
-                sLine = fName -- the line number in sources will be this file's name
+                sLine = fName -- this file name is the line number it came from in sources
                 pkgVersion = v(line:sub(line:find("=")+1))
             end
+            line = file.readLine()
         end
 
         file.close()
@@ -99,7 +115,11 @@ function ccpaw.install(pkgName, version, force)
 
     a(sLine, 'Package not found.\n(Try "cc-paw update" first?)')
 
-    if version and not version ^ pkgVersion then
+    if options.exact then
+        pkgVersion = version
+    end
+
+    if version and not version ^ pkgVersion and not options.force then
         e(pkgName.." v"..version.." requested, but only v"..pkgVersion.." is available, and not compatible.")
     end
 
@@ -119,7 +139,14 @@ function ccpaw.install(pkgName, version, force)
     if package.depends then
         p "Installing dependencies for "..pkgName.."..."
         for pkg, vers in pairs(package.depends) do
-            ccpaw.install(pkg, vers)
+            ccpaw.install(pkg, vers, {ignoreInst = true})
+        end
+    end
+
+    if package.dependsExact then
+        p "Installing dependencies for "..pkgName.."..."
+        for pkg, vers in pairs(package.dependsExact) do
+            ccpaw.install(pkg, vers, {exact = true, ignoreInst = true})
         end
     end
 
@@ -169,15 +196,25 @@ function ccpaw.install(pkgName, version, force)
         end
     end
 
-    --TODO save iCache
-    --fs.exists(iCache..pkgName) then
     write(iCache..pkgName, pkgData)
 
-    p pkgName.." installed."
+    p(pkgName.." installed.")
+
+    return true
 end
 
 function ccpaw.remove(pkgName)
-    --
+    p "Removing "..pkgName.."..."
+
+    local file = open(iCache..pkgName, 'r')
+    local package = textutils.unserialize(file.readAll())
+    file.close()
+
+    --TODO ACTUALLY REMOVE STUFF
+
+    p(pkgName.." removed.")
+
+    return true
 end
 
 function ccpaw.update()
@@ -186,21 +223,25 @@ function ccpaw.update()
     local file = open(sources, 'r')
 
     local line = file.readLine()
-    local count = 1
+    local cFile = 1   -- cache file names are their line in sources
 
     while line do
-        local data = get(line)\
-        write(sCache..count, data)
+        local data = get(line)
+        write(sCache..cFile, data)
 
         line = file.readLine()
-        count = count + 1
+        cFile = cFile + 1
     end
 
     file.close()
 
     p "Done."
+
+    return true
 end
 
+--TODO upgrades need to prevent upgrading of packages where an exact version is depended on by another package
+--TODO upgrades need to be smart enough to complete system wide incompatible upgrades
 function ccpaw.upgrade()
     --
 end
