@@ -25,10 +25,15 @@
     ["cc-paw"] = "0.4.0"   -- depends on a specific version (or compatible upgrade) of a package
   },
   dependsExact = {         -- depends on an EXACT version of a package
-    ["example"] = "1.0.0"  -- NOTE NOT FULLY IMPLEMENTED !!
+    ["example"] = "1.0.0"  -- NOTE NOT FULLY IMPLEMENTED !! EXACT DEPENDENCIES CURRENTLY CAN BE UPGRADED !!
   },
   preinst = [[]],  -- a script to execute before installing this package (return non-zero number and a message to abort)
   postinst = [[]], -- a script to execute after installing this package (return non-zero number and a message to indicate failure)
+  preupgd = [[]],  -- a script to execute before upgrading this package (return non-zero number and a message to abort)
+  postupgd = [[]], -- a script to execute after upgrading this package (return non-zero number and a message to indicate failure)
   prerm = [[]],    -- a script to execute before removing this package (return non-zero number and a message to abort)
-  postrm = [[]]    -- a script to execute after removing this package (return non-zero number and a message to indicate failure)
+  postrm = [[]],   -- a script to execute after removing this package (return non-zero number and a message to indicate failure)
+  -- NOTE PURGING IS NOT IMPLEMENTED YET !!
+  prepurge = [[]], -- a script to execute before purging this package (return non-zero number and a message to abort)
+  postpurge = [[]] -- a script to execute after purging this package (return non-zero number and a message to indicate failure)
 }

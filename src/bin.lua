@@ -32,7 +32,11 @@ elseif (args[1] == "remove") then
 elseif (args[1] == "update") then
   ccpaw.update()
 elseif (args[1] == "upgrade") then
-  ccpaw.upgrade()
+  if ccpaw.upgrade("cc-paw") then
+    print("CC-PAW upgraded, please run \"cc-paw upgrade\" again to upgrade packages.")
+  else
+    ccpaw.upgrade()
+  end
 elseif (args[1] == "-v") or (args[1] == "--version") then
   print("cc-paw version " .. ccpaw.v)
 else

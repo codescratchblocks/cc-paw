@@ -3,25 +3,44 @@ local v = dofile "/lib/semver.lua"
 local ccpaw = {}
 
 ccpaw.v = v"0.4.0"
-ccpaw.print = true
+ccpaw.quiet = false
+ccpaw.log = true
 
 local sources = "/etc/cc-paw/sources.list"
 local sCache = "/var/cache/cc-paw/sources/"
 local iCache = "/var/cache/cc-paw/installed/"
+local rCache = "/var/cache/cc-paw/removed/"
+local logFile = "/var/log/cc-paw.log"
+local errFile = "/var/log/cc-paw-errors.log"
 
--- our own print function to allow toggling output with ccpaw.print
+-- our own print function to allow toggling output with ccpaw.quiet
 local function p(...)
-    if ccpaw.print then
+    if not ccpaw.quiet then
         print(...)
+    end
+
+    if ccpaw.log then
+        local args = {...}
+        local out = ""
+
+        for i = 1, #args do
+            out = out .. "\t" .. args[i]
+        end
+
+        local file = fs.open(logFile, fs.exists(logFile) and 'a' or 'w')
+
+        file.write(out .."\n")
+        file.close()
     end
 end
 
 -- our own error function to log errors
 local function e(msg)
-    local errFile = "/var/log/cc-paw-errors.log"
     local file = fs.open(errFile, fs.exists(errFile) and 'a' or 'w')
+
     file.write(msg.."\n")
     file.close()
+
     error(msg)
 end
 
@@ -84,9 +103,25 @@ function ccpaw.install(pkgName, version, options)
 
     if fs.exists(iCache..pkgName) then
         if options.ignoreInst then
-            --TODO CHECK COMPATIBILITY (installed needs to be greater than requested and a compatible upgrade from requested)
-            --TODO CHECK EXACT COMPATIBILITY (if options.exact, then needs to be exactly equal version !!)
-            return true
+            local file = open(iCache..pkgName, 'r')
+            local package = textutils.unserialize(file.readAll())
+            file.close()
+
+            if options.exact then
+                if v(package.version) == version then
+                    return true
+                else
+                    e("Package "..pkgName.." EXACT version "..version.." required, but v"..package.version.." installed.")
+                end
+            else
+                -- if our version is better or equal, and compatible..
+                if v(package.version) >= version and version ^ v(package.version) then
+                    return true
+                else
+                    e("Package "..pkgName.." v"..version.." required, but incompatible v"..package.version.." installed.")
+                end
+            end
+
         else
             e("Package already installed.\n(Perhaps you meant to upgrade?)")
         end
@@ -210,14 +245,46 @@ function ccpaw.remove(pkgName)
     local package = textutils.unserialize(file.readAll())
     file.close()
 
-    --TODO ACTUALLY REMOVE STUFF
+    if package.prerm then
+        p "Running pre-remove script..."
+
+        ok, result, msg = pcall(loadstring(package.prerm)())
+
+        if not ok then
+            e('Pre-remove script errored: "'..result..'"\nAborting remove.')
+        end
+        if not result == 0 then
+            e('Pre-remove script failed: "'..msg..'"\nAborting remove.')
+        end
+    end
+
+    if package.files then
+        for fName, _ in pairs(package.files) do
+            fs.delete(fName)
+        end
+    end
+
+    if package.postrm then
+        p "Running post-remove script..."
+
+        ok, result, msg = pcall(loadstring(package.postrm)())
+
+        if not ok then
+            e('Post-remove script errored: "'..result..'"\nAborting remove.')
+        end
+        if not result == 0 then
+            e('Post-remove script failed: "'..msg..'"\nAborting remove.')
+        end
+    end
+
+    fs.move(iCache..pkgName, rCache..pkgName)   -- now is a removed package
 
     p(pkgName.." removed.")
 
     return true
 end
 
-function ccpaw.update()
+function ccpaw.update()   --TODO allow specifying a line number to update from ?
     p "Updating sources..."
 
     local file = open(sources, 'r')
@@ -242,8 +309,23 @@ end
 
 --TODO upgrades need to prevent upgrading of packages where an exact version is depended on by another package
 --TODO upgrades need to be smart enough to complete system wide incompatible upgrades
-function ccpaw.upgrade()
-    --
+function ccpaw.upgrade(package)
+    if not package then
+        p "Upgrading all packages."
+
+        for _, pkgName in ipairs(fs.list(iCache)) do
+            ccpaw.upgrade(pkgName)
+        end
+
+        p "Upgrades complete."
+
+        return true
+    end
+
+    -- find latest version according to sources list
+    -- find our current version
+    -- if not equal versions and safe to upgrade, do so
+    -- if not equal versions and NOT safe, print held package
 end
 
 return ccpaw
