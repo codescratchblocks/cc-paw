@@ -3,7 +3,7 @@ local ccpaw = dofile "/lib/cc-paw.lua"
 local args = {...}
 
 local function usage()
-  print("cc-paw version " .. ccpaw.v .. ". Usage:")
+  print("cc-paw version " .. tostring(ccpaw.v) .. ". Usage:")
   print("cc-paw install <package>")
   print("cc-paw remove <package>")
   print("cc-paw update")
@@ -38,7 +38,7 @@ elseif (args[1] == "upgrade") then
     ccpaw.upgrade()
   end
 elseif (args[1] == "-v") or (args[1] == "--version") then
-  print("cc-paw version " .. ccpaw.v)
+  print("cc-paw version " .. tostring(ccpaw.v))
 else
   print("Invalid command: \"" .. args[1] .. "\"")
   usage()

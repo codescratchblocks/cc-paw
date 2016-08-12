@@ -74,7 +74,7 @@ end
 -- gets a file's content (as a string)
 local function get(url)
     --NOTE for now, assumes HTTP API must be used, in the future, local gets will be possible
-    local response = a(http.get(url, {["User-Agent"] = "cc-paw "..ccpaw.v}), 'Error opening "' .. url .. '"')
+    local response = a(http.get(url, {["User-Agent"] = "cc-paw "..tostring(ccpaw.v)}), 'Error opening "' .. url .. '"')
 
     local status = response.getResponseCode()
     if status == 200 then
@@ -111,14 +111,14 @@ function ccpaw.install(pkgName, version, options)
                 if v(package.version) == version then
                     return true
                 else
-                    e("Package "..pkgName.." EXACT version "..version.." required, but v"..package.version.." installed.")
+                    e("Package "..pkgName.." EXACT version "..tostring(version).." required, but v"..package.version.." installed.")
                 end
             else
                 -- if our version is better or equal, and compatible..
                 if v(package.version) >= version and version ^ v(package.version) then
                     return true
                 else
-                    e("Package "..pkgName.." v"..version.." required, but incompatible v"..package.version.." installed.")
+                    e("Package "..pkgName.." v"..tostring(version).." required, but incompatible v"..package.version.." installed.")
                 end
             end
 
@@ -155,7 +155,7 @@ function ccpaw.install(pkgName, version, options)
     end
 
     if version and not version ^ pkgVersion and not options.force then
-        e(pkgName.." v"..version.." requested, but only v"..pkgVersion.." is available, and not compatible.")
+        e(pkgName.." v"..tostring(version).." requested, but only v"..tostring(pkgVersion).." is available, and not compatible.")
     end
 
     local file = open(sources, 'r')
@@ -166,7 +166,7 @@ function ccpaw.install(pkgName, version, options)
 
     p("Getting package info ("..pkgName..")...")
 
-    local pkgData = get(root..pkgName.."/"..pkgVersion.."/pkg.lua")
+    local pkgData = get(root..pkgName.."/"..tostring(pkgVersion).."/pkg.lua")
     local package = textutils.unserialize(pkgData)
 
     a(package.confVersion > 1, "Version 1 package configurations are not supported. Please contact the package maintainer.")
@@ -203,7 +203,7 @@ function ccpaw.install(pkgName, version, options)
 
     if package.files then
         for fName, location in pairs(package.files) do
-            local data = get(root..pkgName.."/"..pkgVersion.."/"..location)
+            local data = get(root..pkgName.."/"..tostring(pkgVersion).."/"..location)
             write(fName, data)
         end
     end
@@ -211,7 +211,7 @@ function ccpaw.install(pkgName, version, options)
     if package.filesOnce then
         for fName, location in pairs(package.files) do
             if not fs.exists(fName) then
-                local data = get(root..pkgName.."/"..pkgVersion.."/"..location)
+                local data = get(root..pkgName.."/"..tostring(pkgVersion).."/"..location)
                 write(fName, data)
             end
         end
@@ -390,7 +390,7 @@ function ccpaw.upgrade(pkgName)
 
             if package.files then
                 for fName, location in pairs(package.files) do
-                    local data = get(root..pkgName.."/"..pkgVersion.."/"..location)
+                    local data = get(root..pkgName.."/"..tostring(pkgVersion).."/"..location)
                     write(fName, data)
                 end
             end
@@ -398,7 +398,7 @@ function ccpaw.upgrade(pkgName)
             if package.filesOnce then
                 for fName, location in pairs(package.files) do
                     if not fs.exists(fName) then
-                        local data = get(root..pkgName.."/"..pkgVersion.."/"..location)
+                        local data = get(root..pkgName.."/"..tostring(pkgVersion).."/"..location)
                         write(fName, data)
                     end
                 end
@@ -428,7 +428,7 @@ function ccpaw.upgrade(pkgName)
         else
             --e("Package "..pkgName.." held at v"..package.version.." because update candidate is incompatible v"..pkgVersion)
             -- the only error that doesn't actually error, because this needs to be acceptable within a loop of upgrades
-            p("Package "..pkgName.." held at v"..package.version.." because update candidate is incompatible v"..pkgVersion)
+            p("Package "..pkgName.." held at v"..package.version.." because update candidate is incompatible v"..tostring(pkgVersion))
             return false
         end
     end
