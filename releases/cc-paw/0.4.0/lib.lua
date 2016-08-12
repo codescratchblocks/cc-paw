@@ -164,7 +164,7 @@ function ccpaw.install(pkgName, version, options)
     end
     file.close()
 
-    p "Getting package info ("..pkgName..")..."
+    p("Getting package info ("..pkgName..")...")
 
     local pkgData = get(root..pkgName.."/"..pkgVersion.."/pkg.lua")
     local package = textutils.unserialize(pkgData)
@@ -173,20 +173,20 @@ function ccpaw.install(pkgName, version, options)
     a(package.confVersion == 2, "You must upgrade cc-paw to install this package.")
 
     if package.depends then
-        p "Installing dependencies for "..pkgName.."..."
+        p("Installing dependencies for "..pkgName.."...")
         for pkg, vers in pairs(package.depends) do
             ccpaw.install(pkg, vers, {ignoreInst = true})
         end
     end
 
     if package.dependsExact then
-        p "Installing dependencies for "..pkgName.."..."
+        p("Installing dependencies for "..pkgName.."...")
         for pkg, vers in pairs(package.dependsExact) do
             ccpaw.install(pkg, vers, {exact = true, ignoreInst = true})
         end
     end
 
-    p "Installing "..pkgName.."..."
+    p("Installing "..pkgName.."...")
 
     if package.preinst then
         p "Running pre-install script..."
@@ -240,7 +240,7 @@ function ccpaw.install(pkgName, version, options)
 end
 
 function ccpaw.remove(pkgName)
-    p "Removing "..pkgName.."..."
+    p("Removing "..pkgName.."...")
 
     local file = open(iCache..pkgName, 'r')
     local package = textutils.unserialize(file.readAll())
@@ -360,20 +360,20 @@ function ccpaw.upgrade(pkgName)
 
             -- Almost completely copied massive section
             if package.depends then
-                p "Checking dependencies for "..pkgName.."..."
+                p("Checking dependencies for "..pkgName.."...")
                 for pkg, vers in pairs(package.depends) do
                     ccpaw.install(pkg, vers, {ignoreInst = true})
                 end
             end
 
             if package.dependsExact then
-                p "Checking dependencies for "..pkgName.."..."
+                p("Checking dependencies for "..pkgName.."...")
                 for pkg, vers in pairs(package.dependsExact) do
                     ccpaw.install(pkg, vers, {exact = true, ignoreInst = true})
                 end
             end
 
-            p "Upgrading "..pkgName.."..."
+            p("Upgrading "..pkgName.."...")
 
             if package.preupgd then
                 p "Running pre-upgrade script..."
