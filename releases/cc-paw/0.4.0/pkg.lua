@@ -3,6 +3,8 @@
   title = "ComputerCraft Package Administration Worker",
   description = "A package manager for ComputerCraft.",
   author = "Guard13007 <paul.liverman.iii@gmail.com>",
+  license = "MIT",
+  source = "https://github.com/cc-paw/cc-paw",
   version = "0.4.0",
   confVersion = 2,
   files = {
