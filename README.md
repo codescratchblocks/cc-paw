@@ -1,5 +1,32 @@
-# cc-paw-new
+# ComputerCraft Package Administration Worker
 
-A complete rewrite of the cc-paw system. Once functional, will replace the old one.
+A package manager for ComputerCraft.
 
-DO NOT ATTEMPT TO USE THIS UNTIL IT HAS REPLACED THE OLD CC-PAW.
+CC-PAW aims to provide an easy-to-use method for installing, upgrading, and
+removing software on ComputerCraft computers.
+
+This repository contains the source for CC-PAW itself, and releases of it and
+its dependencies.
+
+## Installation
+
+Run `pastebin run VmqguQeA` on a ComputerCraft device to install CC-PAW.
+
+You must have the HTTP API enabled, and have `github.io` or `cc-paw.github.io`
+on your whitelist. (These options are enabled by default.)
+
+## Usage
+
+Run `man cc-paw` at any time to view the manual for CC-PAW. It works somewhat
+similar to `apt-get`, so it should be familiar to users of Debian-based systems.
+
+## Upgrading
+
+Run `cc-paw update` and then `cc-paw upgrade` at any time to upgrade CC-PAW
+itself, as well as any installed packages.
+
+## Development
+
+For now, see the `example-package-info.lua` file in this repository, (and the
+releases here and pacakges repository), for examples. In the future, a guide
+will be written on the subject.
