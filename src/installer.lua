@@ -160,4 +160,5 @@ end
 print "Installing CC-PAW..."
 ccpaw.update()
 ccpaw.install("cc-paw")
+shell.run("/startup")
 print "Done. :D"
