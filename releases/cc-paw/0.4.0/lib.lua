@@ -209,7 +209,7 @@ function ccpaw.install(pkgName, version, options)
     end
 
     if package.filesOnce then
-        for fName, location in pairs(package.files) do
+        for fName, location in pairs(package.filesOnce) do
             if not fs.exists(fName) then
                 local data = get(root..pkgName.."/"..tostring(pkgVersion).."/"..location)
                 write(fName, data)
@@ -396,7 +396,7 @@ function ccpaw.upgrade(pkgName)
             end
 
             if package.filesOnce then
-                for fName, location in pairs(package.files) do
+                for fName, location in pairs(package.filesOnce) do
                     if not fs.exists(fName) then
                         local data = get(root..pkgName.."/"..tostring(pkgVersion).."/"..location)
                         write(fName, data)

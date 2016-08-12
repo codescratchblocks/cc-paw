@@ -130,7 +130,7 @@ function ccpaw.install(pkgName)
     end
 
     if package.filesOnce then
-        for fName, location in pairs(package.files) do
+        for fName, location in pairs(package.filesOnce) do
             if not fs.exists(fName) then
                 local data = get(root..pkgName.."/"..pkgVersion.."/"..location)
                 write(fName, data)
