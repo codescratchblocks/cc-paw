@@ -175,14 +175,14 @@ function ccpaw.install(pkgName, version, options)
     if package.depends then
         p("Installing dependencies for "..pkgName.."...")
         for pkg, vers in pairs(package.depends) do
-            ccpaw.install(pkg, vers, {ignoreInst = true})
+            ccpaw.install(pkg, vers, {ignoreInst = true, force = options.force})
         end
     end
 
     if package.dependsExact then
         p("Installing dependencies for "..pkgName.."...")
         for pkg, vers in pairs(package.dependsExact) do
-            ccpaw.install(pkg, vers, {exact = true, ignoreInst = true})
+            ccpaw.install(pkg, vers, {exact = true, ignoreInst = true, force = options.force})
         end
     end
 
@@ -310,8 +310,14 @@ end
 
 --TODO upgrades need to prevent upgrading of packages where an exact version is depended on by another package
 --TODO upgrades need to be smart enough to complete system wide incompatible upgrades
-function ccpaw.upgrade(pkgName)
-    if not package then
+-- installs available and compatible upgrades
+-- options.force (bool) will allow installation of incompatible updates
+function ccpaw.upgrade(pkgName, options)
+    if not options then
+        options = {}
+    end
+
+    if not pkgName then
         p "Upgrading all packages."
 
         for _, package in ipairs(fs.list(iCache)) do
@@ -362,14 +368,14 @@ function ccpaw.upgrade(pkgName)
             if package.depends then
                 p("Checking dependencies for "..pkgName.."...")
                 for pkg, vers in pairs(package.depends) do
-                    ccpaw.install(pkg, vers, {ignoreInst = true})
+                    ccpaw.install(pkg, vers, {ignoreInst = true, force = options.force})
                 end
             end
 
             if package.dependsExact then
                 p("Checking dependencies for "..pkgName.."...")
                 for pkg, vers in pairs(package.dependsExact) do
-                    ccpaw.install(pkg, vers, {exact = true, ignoreInst = true})
+                    ccpaw.install(pkg, vers, {exact = true, ignoreInst = true, force = options.force})
                 end
             end
 
