@@ -288,13 +288,13 @@ end
 function ccpaw.update()   --TODO allow specifying a line number to update from ?
     p "Updating sources..."
 
-    local file = open(sources.."/package.list", 'r')
+    local file = open(sources, 'r')
 
     local line = file.readLine()
     local cFile = 1   -- cache file names are their line in sources
 
     while line do
-        local data = get(line)
+        local data = get(line.."/packages.list")
         write(sCache..cFile, data)
 
         line = file.readLine()
