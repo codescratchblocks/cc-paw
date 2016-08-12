@@ -1,4 +1,4 @@
--- This file (minus this comment) is available at http://pastebin.com/VmqguQeA
+-- This file is available at http://pastebin.com/VmqguQeA
 --  Or, to install CC-PAW, use "pastebin run VmqguQeA" :)
 
 local ccpaw = {}
@@ -7,7 +7,6 @@ ccpaw.v = "0.4.0"
 ccpaw.quiet = true
 ccpaw.log = true
 
-local sources = "/etc/cc-paw/sources.list"
 local sCache = "/var/cache/cc-paw/sources/"
 local iCache = "/var/cache/cc-paw/installed/"
 local logFile = "/var/log/cc-paw.log"
@@ -80,27 +79,18 @@ local function get(url)
 end
 
 function ccpaw.install(pkgName)
-    local root, sLine, pkgVersion
+    local root, pkgVersion = "https://cc-paw.github.io/cc-paw/releases/", "0.4.0"
 
-    for _, fName in ipairs(fs.list(sCache)) do
-        local file = open(sCache .. fName, 'r')
+    local file = open(sCache.."1", 'r')
 
-        local line = file.readLine()
-        while line do
-            if line:sub(1, line:find("=")-1) == pkgName then
-                sLine = fName
-                pkgVersion = line:sub(line:find("=")+1)
-            end
-            line = file.readLine()
+    local line = file.readLine()
+    while line do
+        if line:sub(1, line:find("=")-1) == pkgName then
+            pkgVersion = line:sub(line:find("=")+1)
         end
-
-        file.close()
+        line = file.readLine()
     end
 
-    local file = open(sources, 'r')
-    for i=1,sLine do
-        root = file.readLine()
-    end
     file.close()
 
     local pkgData = get(root..pkgName.."/"..pkgVersion.."/pkg.lua")
@@ -163,18 +153,11 @@ function ccpaw.install(pkgName)
 end
 
 function ccpaw.update()
-    local file = open(sources, 'r')
-
-    local line = file.readLine()
-    local cFile = 1
-
-    while line do
-        local data = get(line)
-        write(sCache..cFile, data)
-
-        line = file.readLine()
-        cFile = cFile + 1
-    end
-
-    file.close()
+    local data = get("https://cc-paw.github.io/cc-paw/releases/packages.list")
+    write(sCache.."1", data)
 end
+
+p "Installing CC-PAW..."
+ccpaw.update()
+ccpaw.install("cc-paw")
+p "Done. :D"

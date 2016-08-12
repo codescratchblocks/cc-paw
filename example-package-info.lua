@@ -8,12 +8,15 @@
 
 {
   name = "example-package",     -- used internally to identify packages
-  title = "An Example Package", -- a human readable title / brief description of the package
-  description = "An example package.",
-  author = "Example Name <email@example.com>", -- note: email address not required!
   version = "1.0.0", -- all packages use Semantic Versioning (see http://semver.org/)
-  confVersion = 2,                             -- the version of this config format
+  confVersion = 2,                                 -- the version of this config format
   -- NOTE: Anything below here is optional, depending on what a particular package needs to define.
+  title = "An Example Package",                    -- a human readable title / brief description of the package
+  description = "An example package.",
+  author = "Example Name <email@example.com>",     -- (created the source) note: email address not required!
+  maintainer = "Example Name <email@example.com>", -- (maintains the package) note: email address not required
+  license = "",                                    -- a URL or brief piece of info about the license of this package
+  source = "",                                     -- a URL to the source of this package
   files = {
     ["/local/location"] = "example.file"   -- this is retrieved from ROOT .. NAME .. "/" .. VERSION .. "/" .. FILE (as defined here)
   },
