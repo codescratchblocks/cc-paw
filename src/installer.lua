@@ -157,7 +157,7 @@ function ccpaw.update()
     write(sCache.."1", data)
 end
 
-p "Installing CC-PAW..."
+print "Installing CC-PAW..."
 ccpaw.update()
 ccpaw.install("cc-paw")
-p "Done. :D"
+print "Done. :D"
