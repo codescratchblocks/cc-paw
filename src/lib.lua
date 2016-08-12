@@ -137,7 +137,7 @@ function ccpaw.install(pkgName, version, options)
 
         local line = file.readLine()
         --NOTE see how a source lower in the sources list is chosen over one higher in the list !
-        while line do
+        while line and line:len() > 0 do
             if line:sub(1, line:find("=")-1) == pkgName then
                 sLine = fName -- this file name is the line number it came from in sources
                 pkgVersion = v(line:sub(line:find("=")+1))
@@ -293,7 +293,7 @@ function ccpaw.update()   --TODO allow specifying a line number to update from ?
     local line = file.readLine()
     local cFile = 1   -- cache file names are their line in sources
 
-    while line do
+    while line and line:len() > 0 do
         local data = get(line.."/packages.list")
         write(sCache..cFile, data)
 
@@ -334,7 +334,7 @@ function ccpaw.upgrade(pkgName)
 
         local line = file.readLine()
         --NOTE see how a source lower in the sources list is chosen over one higher in the list !
-        while line do
+        while line and line:len() > 0 do
             if line:sub(1, line:find("=")-1) == pkgName then
                 sLine = fName -- this file name is the line number it came from in sources
                 pkgVersion = v(line:sub(line:find("=")+1))
