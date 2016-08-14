@@ -1,3 +1,6 @@
+v0.4.3
+- Made CC-PAW post-purge script to remove all CC-PAW files. #10
+- Installing a package that was removed now removes it from the removed cache. #14
 v0.4.2
 - Fixed a bug preventing upgrades entirely.
 v0.4.1
