@@ -161,6 +161,9 @@ function ccpaw.install(pkgName, version, options)
     script(package, "postinst", "post-install")
 
     write(iCache..pkgName, pkgData)
+    if fs.exists(rCache..pkgName) then
+        fs.delete(rCache..pkgName)
+    end
 
     p(pkgName.." installed.")
 
