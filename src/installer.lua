@@ -3,7 +3,6 @@
 
 local ccpaw = {}
 
-ccpaw.v = "0.4.0"
 ccpaw.quiet = true
 ccpaw.log = true
 
@@ -66,7 +65,7 @@ local function write(fName, data)
 end
 
 local function get(url)
-    local response = a(http.get(url, {["User-Agent"] = "cc-paw "..ccpaw.v}), 'Error opening "' .. url .. '"')
+    local response = a(http.get(url, {["User-Agent"] = "cc-paw installer"}), 'Error opening "' .. url .. '"')
 
     local status = response.getResponseCode()
     if status == 200 then
@@ -79,7 +78,7 @@ local function get(url)
 end
 
 function ccpaw.install(pkgName)
-    local root, pkgVersion = "https://cc-paw.github.io/cc-paw/releases/", "0.4.0"
+    local root, pkgVersion = "https://cc-paw.github.io/cc-paw/releases/", ""
 
     local file = open(sCache.."1", 'r')
 
