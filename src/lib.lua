@@ -1,77 +1,29 @@
 local v = dofile "/lib/semver.lua"
+local util = dofile "/lib/cc-paw-util.lua"
+local p, e, a, script = util.p, util.e, util.a, util.script
 
 local ccpaw = {}
 
-ccpaw.v = v"0.4.2"
-ccpaw.quiet = false
-ccpaw.log = true
+ccpaw.v = v"0.4.3"
 
 local sources = "/etc/cc-paw/sources.list"
 local sCache = "/var/cache/cc-paw/sources/"
 local iCache = "/var/cache/cc-paw/installed/"
 local rCache = "/var/cache/cc-paw/removed/"
-local logFile = "/var/log/cc-paw.log"
-local errFile = "/var/log/cc-paw-errors.log"
 
--- our own print function to allow toggling output with ccpaw.quiet
-local function p(...)
-    if not ccpaw.quiet then
-        print(...)
-    end
-
-    if ccpaw.log then
-        local args = {...}
-        local out = ""
-
-        for i = 1, #args do
-            out = out .. "\t" .. args[i]
-        end
-
-        local file = fs.open(logFile, fs.exists(logFile) and 'a' or 'w')
-
-        file.write(out .."\n")
-        file.close()
-    end
-end
-
--- our own error function to log errors
-local function e(msg)
-    local file = fs.open(errFile, fs.exists(errFile) and 'a' or 'w')
-
-    file.write(msg.."\n")
-    file.close()
-
-    error(msg)
-end
-
--- our own assert to make sure our own error is used
-local function a(truthy, errMsg)
-    if truthy then
-        return truthy
-    else
-        e(errMsg)
-    end
-end
-
--- open a file, error on failure
+-- fs.open() with error messaging! :D
 local function open(file, mode)
-    if mode == 'r' then
-        return a(fs.open(file, mode), 'Could not open "'..file..'" for reading.')
-    elseif mode == 'w' then
-        return a(fs.open(file, mode), 'Cound not open "'..file..'" for writing.')
-    else
-        return a(fs.open(file, mode), 'Could not open "'..file..'"')
-    end
+    return a(fs.open(file, mode), 'Could not open "'..file..'" in "'..mode..'" mode.')
 end
 
--- wrapper for basic file writing
+-- wrapper to write a file
 local function write(fName, data)
     local file = open(fName, 'w')
     file.write(data)
     file.close()
 end
 
--- gets a file's content (as a string)
+-- get file content by URL
 local function get(url)
     --NOTE for now, assumes HTTP API must be used, in the future, local gets will be possible
     local response = a(http.get(url, {["User-Agent"] = "cc-paw "..tostring(ccpaw.v)}), 'Error opening "' .. url .. '"')
@@ -188,18 +140,7 @@ function ccpaw.install(pkgName, version, options)
 
     p("Installing "..pkgName.."...")
 
-    if package.preinst then
-        p "Running pre-install script..."
-
-        ok, result, msg = pcall(loadstring(package.preinst)())
-
-        if not ok then
-            e('Pre-install script errored: "'..result..'"\nAborting installation.')
-        end
-        if not result == 0 then
-            e('Pre-install script failed: "'..msg..'"\nAborting installation.')
-        end
-    end
+    script(package, "preinst", "pre-install")
 
     if package.files then
         for fName, location in pairs(package.files) do
@@ -217,20 +158,7 @@ function ccpaw.install(pkgName, version, options)
         end
     end
 
-    if package.postinst then
-        p "Running post-install script..."
-
-        ok, result, msg = pcall(loadstring(package.postinst)())
-
-        if not ok then
-            e('Post-install script errored: "'..result..'"\nAborting installation.')
-            --TODO undo changes ! (which means I can't use error!)
-        end
-        if not result == 0 then
-            e('Post-install script failed: "'..msg..'"\nAborting installation.')
-            --TODO undo changes ! (which means I can't use error!)
-        end
-    end
+    script(package, "postinst", "post-install")
 
     write(iCache..pkgName, pkgData)
 
@@ -246,18 +174,7 @@ function ccpaw.remove(pkgName)
     local package = textutils.unserialize(file.readAll())
     file.close()
 
-    if package.prerm then
-        p "Running pre-remove script..."
-
-        ok, result, msg = pcall(loadstring(package.prerm)())
-
-        if not ok then
-            e('Pre-remove script errored: "'..result..'"\nAborting remove.')
-        end
-        if not result == 0 then
-            e('Pre-remove script failed: "'..msg..'"\nAborting remove.')
-        end
-    end
+    script(package, "prerm", "pre-remove")
 
     if package.files then
         for fName, _ in pairs(package.files) do
@@ -265,18 +182,7 @@ function ccpaw.remove(pkgName)
         end
     end
 
-    if package.postrm then
-        p "Running post-remove script..."
-
-        ok, result, msg = pcall(loadstring(package.postrm)())
-
-        if not ok then
-            e('Post-remove script errored: "'..result..'"\nAborting remove.')
-        end
-        if not result == 0 then
-            e('Post-remove script failed: "'..msg..'"\nAborting remove.')
-        end
-    end
+    script(package, "postrm", "post-remove")
 
     fs.move(iCache..pkgName, rCache..pkgName)   -- now is a removed package
 
@@ -368,7 +274,7 @@ function ccpaw.upgrade(pkgName, options)
     if pkgVersion == v(package.version) then
         return false
     else
-        if v(package.version) ^ pkgVersion then
+        if v(package.version) ^ pkgVersion or options.force then
 
             -- Almost completely copied massive section
             if package.depends then
@@ -387,18 +293,7 @@ function ccpaw.upgrade(pkgName, options)
 
             p("Upgrading "..pkgName.."...")
 
-            if package.preupgd then
-                p "Running pre-upgrade script..."
-
-                ok, result, msg = pcall(loadstring(package.preupgd)())
-
-                if not ok then
-                    e('Pre-upgrade script errored: "'..result..'"\nAborting upgrade.')
-                end
-                if not result == 0 then
-                    e('Pre-upgrade script failed: "'..msg..'"\nAborting upgrade.')
-                end
-            end
+            script(package, "preupgd", "pre-upgrade")
 
             if package.files then
                 for fName, location in pairs(package.files) do
@@ -416,20 +311,7 @@ function ccpaw.upgrade(pkgName, options)
                 end
             end
 
-            if package.postupgd then
-                p "Running post-upgrade script..."
-
-                ok, result, msg = pcall(loadstring(package.postupgd)())
-
-                if not ok then
-                    e('Post-upgrade script errored: "'..result..'"\nAborting upgrade.')
-                    --TODO undo changes ! (which means I can't use error!)
-                end
-                if not result == 0 then
-                    e('Post-upgrade script failed: "'..msg..'"\nAborting upgrade.')
-                    --TODO undo changes ! (which means I can't use error!)
-                end
-            end
+            script(package, "postupgd", "post-upgrade")
 
             write(iCache..pkgName, pkgData)
 
