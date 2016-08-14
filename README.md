@@ -1,8 +1,8 @@
 # ComputerCraft Package Administration Worker
 
-[![GitHub release](https://img.shields.io/github/release/cc-paw/cc-paw.svg?maxAge=2592000)](https://github.com/cc-paw/cc-paw/releases/latest)
-[![GitHub downloads](https://img.shields.io/github/downloads/cc-paw/cc-paw/latest/total.svg?maxAge=2592000)](https://github.com/cc-paw/cc-paw/releases/latest)
-[![GitHub issues](https://img.shields.io/github/issues-raw/cc-paw/cc-paw.svg?maxAge=2592000)](https://github.com/cc-paw/cc-paw/issues)
+[![GitHub release](https://img.shields.io/github/release/cc-paw/cc-paw.svg)](https://github.com/cc-paw/cc-paw/releases/latest)
+[![GitHub downloads](https://img.shields.io/github/downloads/cc-paw/cc-paw/latest/total.svg?maxAge=3000)](https://github.com/cc-paw/cc-paw/releases/latest)
+[![GitHub issues](https://img.shields.io/github/issues-raw/cc-paw/cc-paw.svg?maxAge=3000)](https://github.com/cc-paw/cc-paw/issues)
 [![GitHub license](https://img.shields.io/github/license/cc-paw/cc-paw.svg?maxAge=2592000)](https://github.com/cc-paw/cc-paw/blob/master/LICENSE.txt)
 
 A package manager for ComputerCraft.
