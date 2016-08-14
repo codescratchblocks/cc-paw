@@ -1,3 +1,5 @@
+v0.4.2
+- Fixed a bug preventing upgrades entirely.
 v0.4.1
 - Fixed a bug preventing upgrades of packages other than CC-PAW.
 v0.4.0
