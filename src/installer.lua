@@ -1,4 +1,4 @@
---REVISION 4
+--REVISION 5
 -- This file is available at http://pastebin.com/VmqguQeA
 --  Or, to install CC-PAW, use "pastebin run VmqguQeA" :)
 
@@ -50,13 +50,7 @@ local function a(truthy, errMsg)
 end
 
 local function open(file, mode)
-    if mode == 'r' then
-        return a(fs.open(file, mode), 'Could not open "'..file..'" for reading.')
-    elseif mode == 'w' then
-        return a(fs.open(file, mode), 'Cound not open "'..file..'" for writing.')
-    else
-        return a(fs.open(file, mode), 'Could not open "'..file..'"')
-    end
+    return a(fs.open(file, mode), 'Could not open "'..file..'" in "'..mode..'" mode.')
 end
 
 local function write(fName, data)
