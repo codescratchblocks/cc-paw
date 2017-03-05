@@ -1,11 +1,8 @@
---REVISION 5
+--REVISION 5.1
 -- This file is available at http://pastebin.com/VmqguQeA
 --  Or, to install CC-PAW, use "pastebin run VmqguQeA" :)
 
 local ccpaw = {}
-
-ccpaw.quiet = true
-ccpaw.log = true
 
 local sCache = "/var/cache/cc-paw/sources/"
 local iCache = "/var/cache/cc-paw/installed/"
@@ -13,23 +10,17 @@ local logFile = "/var/log/cc-paw.log"
 local errFile = "/var/log/cc-paw-errors.log"
 
 local function p(...)
-    if not ccpaw.quiet then
-        print(...)
+    local args = {...}
+    local out = ""
+
+    for i = 1, #args do
+        out = out .. "\t" .. args[i]
     end
 
-    if ccpaw.log then
-        local args = {...}
-        local out = ""
+    local file = fs.open(logFile, fs.exists(logFile) and 'a' or 'w')
 
-        for i = 1, #args do
-            out = out .. "\t" .. args[i]
-        end
-
-        local file = fs.open(logFile, fs.exists(logFile) and 'a' or 'w')
-
-        file.write(out .."\n")
-        file.close()
-    end
+    file.write(out .."\n")
+    file.close()
 end
 
 local function e(msg)
@@ -81,6 +72,7 @@ function ccpaw.install(pkgName)
     while line do
         if line:sub(1, line:find("=")-1) == pkgName then
             pkgVersion = line:sub(line:find("=")+1)
+            break
         end
         line = file.readLine()
     end
@@ -95,12 +87,6 @@ function ccpaw.install(pkgName)
 
     if package.depends then
         for pkg, vers in pairs(package.depends) do
-            ccpaw.install(pkg)
-        end
-    end
-
-    if package.dependsExact then
-        for pkg, vers in pairs(package.dependsExact) do
             ccpaw.install(pkg)
         end
     end
