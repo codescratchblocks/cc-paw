@@ -36,5 +36,5 @@ itself, as well as any installed packages.
 ## Development
 
 For now, see the `example-package-info.lua` file in this repository, (and the
-releases here and pacakges repository), for examples. In the future, a guide
+releases here and packages repository), for examples. In the future, a guide
 will be written on the subject.
