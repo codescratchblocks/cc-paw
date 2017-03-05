@@ -194,6 +194,32 @@ function ccpaw.remove(pkgName)
     return true
 end
 
+function ccpaw.purge(pkgName)
+    ccpaw.remove(pkgName)
+
+    p("Purging "..pkgName.."...")
+
+    local file = open(rCache..pkgName, 'r')
+    local package = textutils.unserialize(file.readAll())
+    file.close()
+
+    script(package, "prepurge", "pre-purge")
+
+    if package.filesOnce then
+        for fName, _ in pairs(package.files) do
+            fs.delete(fName)
+        end
+    end
+
+    script(package, "postpurge", "post-purge")
+
+    fs.delete(rCache..pkgName)
+
+    p(pkgName.." purged.")
+
+    return true
+end
+
 function ccpaw.update()   --TODO allow specifying a line number to update from ?
     p "Updating sources..."
 

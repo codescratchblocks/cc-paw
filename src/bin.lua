@@ -6,6 +6,7 @@ local function usage()
   print("cc-paw version " .. tostring(ccpaw.v) .. ". Usage:")
   print("cc-paw install <package> [-f]")
   print("cc-paw remove <package>")
+  print("cc-paw purge <package>")
   print("cc-paw update")
   print("cc-paw upgrade [-f]")
   print("For more usage information, type \"man cc-paw\"")
@@ -33,21 +34,18 @@ elseif (args[1] == "remove") then
   if enoughArgs(2) then
     ccpaw.remove(args[2])
   end
+elseif (args[1] == "purge") then
+  if enoughArgs(2) then
+    ccpaw.purge(args[2])
+  end
 elseif (args[1] == "update") then
   ccpaw.update()
 elseif (args[1] == "upgrade") then
-  if (args[2] == "-f") or (args[2] == "--force") then
-    if ccpaw.upgrade("cc-paw", {force = true}) then
-      print("CC-PAW upgraded, please run \"cc-paw upgrade\" again to upgrade packages.")
-    else
-      ccpaw.upgrade(nil, {force = true})
-    end
+  local force = (args[2] == "-f") or (args[2] == "--force")
+  if ccpaw.upgrade("cc-paw", {force = force}) then
+    print("CC-PAW upgraded, please run \"cc-paw upgrade\" again to upgrade packages.")
   else
-    if ccpaw.upgrade("cc-paw") then
-      print("CC-PAW upgraded, please run \"cc-paw upgrade\" again to upgrade packages.")
-    else
-      ccpaw.upgrade()
-    end
+    ccpaw.upgrade(nil, {force = force})
   end
 elseif (args[1] == "-v") or (args[1] == "--version") then
   print("cc-paw version " .. tostring(ccpaw.v))
