@@ -168,6 +168,7 @@ function ccpaw.install(pkgName, version, options)
 
     if package.filesOnce then
         for fName, location in pairs(package.filesOnce) do
+            -- filesOnce are allowed to exist because they may be left over from a removed package
             if not fs.exists(fName) then
                 local data = get(root..pkgName.."/"..tostring(pkgVersion).."/"..location)
                 write(fName, data)
