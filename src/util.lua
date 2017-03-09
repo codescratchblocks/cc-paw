@@ -37,6 +37,8 @@ function util.e(msg)
     error(msg)
 end
 
+local p, e = util.p, util.e
+
 -- assert() using our error function
 function util.a(truthy, errMsg)
     if truthy then
@@ -45,8 +47,6 @@ function util.a(truthy, errMsg)
         e(errMsg)
     end
 end
-
-local p, e, a = util.p, util.e, util.a
 
 -- run pre/post install/upgrade/remove/purge scripts
 function util.script(pkg, id, msg)
