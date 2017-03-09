@@ -228,7 +228,10 @@ function ccpaw.purge(pkgName)
 
     fs.delete(rCache..pkgName)
 
-    p(pkgName.." purged.")
+    -- snippet to prevent cc-paw from writing files for itself after purging itself
+    if not (pkgName == "cc-paw") then
+        p(pkgName.." purged.")
+    end
 
     return true
 end
