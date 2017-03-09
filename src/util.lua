@@ -49,18 +49,16 @@ function util.a(truthy, errMsg)
 end
 
 -- run pre/post install/upgrade/remove/purge scripts
-function util.script(pkg, id, msg)
-    if package[id] then
-        p("Running "..msg.." script...")
+function util.script(pkg, name, msg)
+    p("Running "..msg.." script...")
 
-        ok, result, errMsg = pcall(loadstring(pkg[id])())
+    local ok, result, errMsg = pcall(loadstring(pkg[name])())
 
-        if not ok then
-            e(msg..'" script errored: "'..result..'"\nAborting.')
-        end
-        if not result == 0 then
-            e(msg..'" script failed: "'..errMsg..'"\nAborting.')
-        end
+    if not ok then
+        e(msg..'" script errored: "'..result..'"\nAborting.')
+    end
+    if not result == 0 then
+        e(msg..'" script failed: "'..errMsg..'"\nAborting.')
     end
 end
 

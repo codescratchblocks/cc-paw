@@ -1,6 +1,10 @@
-ComputerCraft Package Administration Worker v0.4.3
+ComputerCraft Package Administration Worker v0.4.4
 
 Manages package installation, updates, and removals.
+
+Note: If cc-paw fails to function from an internal error,
+please report the error, and re-install when a new version
+becomes available.
 
 Usage:
 

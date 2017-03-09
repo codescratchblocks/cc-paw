@@ -4,7 +4,7 @@ local p, e, a, script = util.p, util.e, util.a, util.script
 
 local ccpaw = {}
 
-ccpaw.v = v"0.4.3"
+ccpaw.v = v"0.4.4"
 
 local sources = "/etc/cc-paw/sources.list"
 local sCache = "/var/cache/cc-paw/sources/"
@@ -18,6 +18,7 @@ end
 
 -- wrapper to write a file
 local function write(fName, data)
+    --p("Writing to \"" .. fName .. "\"...") -- TODO if verbose!
     local file = open(fName, 'w')
     file.write(data)
     file.close()
@@ -42,7 +43,8 @@ end
 -- version is a string representing the version you want to install, optional
 -- options.force (bool) will allow installation of incompatible updates
 -- options.exact (bool) will force installation to attempt installing the exact specified version from whichever repo has a version
--- options.root (string) will allow specifying where to install from (NOTE NOT IMPLEMENTED!)
+-- TODO make options.exact check other repos?
+-- options.root (string) will allow specifying where to install from (NOTE partially implemented)
 -- options.ignoreInst (bool) will ignore an already installed package instead of erroring
 function ccpaw.install(pkgName, version, options)
     if version then
@@ -79,28 +81,45 @@ function ccpaw.install(pkgName, version, options)
         end
     end
 
-    p "Reading sources..."
-
+    --TODO this whole section should be abstracted into root, pkgVersion = getRootAndVersion(pkgName, version, options)
     -- root to grab files from, line of sources to read from, package version to install
     local root, sLine, pkgVersion
 
-    for _, fName in ipairs(fs.list(sCache)) do
-        local file = open(sCache .. fName, 'r')
+    if options.root then
+        root = options.root
 
-        local line = file.readLine()
-        --NOTE see how a source lower in the sources list is chosen over one higher in the list !
-        while line and line:len() > 0 do
-            if line:sub(1, line:find("=")-1) == pkgName then
-                sLine = fName -- this file name is the line number it came from in sources
-                pkgVersion = v(line:sub(line:find("=")+1))
+        -- TODO get packages.list from root, parse and find our pkgVersion
+        -- need to get a file, and read lines until we find our package and its version
+        local data = get(root .. "/packages.list")
+        -- TODO write iterator for strings based on lines within them
+    else
+        p "Reading sources..."
+
+        for _, fName in ipairs(fs.list(sCache)) do
+            local file = open(sCache .. fName, 'r')
+
+            local line = file.readLine()
+            --NOTE see how a source lower in the sources list is chosen over one higher in the list !
+            while line and line:len() > 0 do
+                if line:sub(1, line:find("=")-1) == pkgName then
+                    sLine = fName -- this file name is the line number it came from in sources
+                    pkgVersion = v(line:sub(line:find("=")+1))
+                    break
+                end
+                line = file.readLine()
             end
-            line = file.readLine()
+
+            file.close()
         end
 
+        a(sLine, 'Package '..pkgName..' not found.\n(Try "cc-paw update" first?)')
+
+        local file = open(sources, 'r')
+        for i=1,sLine do
+            root = file.readLine()
+        end
         file.close()
     end
-
-    a(sLine, 'Package '..pkgName..' not found.\n(Try "cc-paw update" first?)')
 
     if options.exact then
         pkgVersion = version
@@ -109,12 +128,6 @@ function ccpaw.install(pkgName, version, options)
     if version and not version ^ pkgVersion and not options.force then
         e(pkgName.." v"..tostring(version).." requested, but only v"..tostring(pkgVersion).." is available, and not compatible.")
     end
-
-    local file = open(sources, 'r')
-    for i=1,sLine do
-        root = file.readLine()
-    end
-    file.close()
 
     p("Getting package info ("..pkgName..")...")
 
@@ -206,7 +219,7 @@ function ccpaw.purge(pkgName)
     script(package, "prepurge", "pre-purge")
 
     if package.filesOnce then
-        for fName, _ in pairs(package.files) do
+        for fName, _ in pairs(package.filesOnce) do
             fs.delete(fName)
         end
     end
@@ -264,9 +277,9 @@ function ccpaw.upgrade(pkgName, options)
         return true
     end
 
+    -- NOTE this is a literal copy from another part of this code, fix this !
+    -- NOTE literal copy is from the beginning of the installer code
     p "Reading sources..."
-
-    -- NOTE how this is a literal copy from another part of this code, fix this !
     -- root to grab files from, line of sources to read from, package version to install
     local root, sLine, pkgVersion
 
@@ -340,6 +353,13 @@ function ccpaw.upgrade(pkgName, options)
                 end
             end
 
+            -- NOTE abstraction idea
+            --f(package.filesOnce, function(fName, location)
+            --    if not fs.exists(fName) then
+            --        shit
+            --    end
+            --end)
+
             script(package, "postupgd", "post-upgrade")
 
             write(iCache..pkgName, pkgData)
@@ -349,8 +369,9 @@ function ccpaw.upgrade(pkgName, options)
 
             return true
         else
-            --e("Package "..pkgName.." held at v"..package.version.." because update candidate is incompatible v"..pkgVersion)
             -- the only error that doesn't actually error, because this needs to be acceptable within a loop of upgrades
+            -- (both for cc-paw alpha versions to upgrade, and for allowing a system to update as much as possible within supported versions)
+            -- NOTE current mechanisms do not allow for a host to store info of multiple package versions available..this should be fixed, so latest compatible version can be installed...
             p("Package "..pkgName.." held at v"..package.version.." because update candidate is incompatible v"..tostring(pkgVersion))
             return false
         end

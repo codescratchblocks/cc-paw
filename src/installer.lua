@@ -1,4 +1,4 @@
---REVISION 5.1
+--REVISION 5.2
 -- This file is available at http://pastebin.com/VmqguQeA
 --  Or, to install CC-PAW, use "pastebin run VmqguQeA" :)
 
@@ -45,6 +45,7 @@ local function open(file, mode)
 end
 
 local function write(fName, data)
+    p("Writing to \"" .. fName .. "\"...")
     local file = open(fName, 'w')
     file.write(data)
     file.close()
