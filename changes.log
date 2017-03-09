@@ -1,4 +1,11 @@
+v0.5.0
+- Fixed bugs preventing upgrades entirely.
+v0.4.4
+- BUG: Upgrading broken.
+- Fixed several bugs breaking upgrades.
+- Fixed internal util library creating global variables. (Whoops!)
 v0.4.3
+- BUG: Upgrading broken.
 - Added purge capability.
 - Made CC-PAW post-purge script to remove all CC-PAW files. #10
 - Installing a package that was removed now removes it from the removed cache.
