@@ -1,4 +1,4 @@
-ComputerCraft Package Administration Worker v0.4.4
+ComputerCraft Package Administration Worker v0.5.0
 
 Manages package installation, updates, and removals.
 
