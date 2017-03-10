@@ -1,0 +1,7 @@
+cc-paw-installer v0.5.3
+
+Installs cc-paw package. Can install a specific version.
+
+Usage:
+
+ install-cc-paw [version]
