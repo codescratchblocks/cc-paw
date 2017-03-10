@@ -6,6 +6,9 @@ Note: If cc-paw fails to function from an internal error,
 please report the error, and re-install when a new version
 becomes available.
 
+It is recommended to install the cc-paw-installer package
+to facilitate easy re-install of CC-PAW.
+
 Usage:
 
  cc-paw install <package> [-f] [--force]
