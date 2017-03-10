@@ -16,6 +16,8 @@ its dependencies.
 ## Installation
 
 Run `pastebin run VmqguQeA` on a ComputerCraft device to install CC-PAW.
+(Alternately, `pastebin get VmqguQeA install-cc-paw` to save the installer, and
+ `install-cc-paw [version]` can be used to install a specific version.)
 
 You must have the HTTP API enabled, and have `github.io` or `cc-paw.github.io`
 on your whitelist. (These options are enabled by default.)
@@ -52,3 +54,10 @@ will be written on the subject.
 - [ ] Update version number in releases/packages.list
 - [ ] Merge `dev` branch into `gh-pages`
 - [ ] Tag and draft release on GitHub. Remember to upload CC-PAW.zip!
+
+### Release Checklist (cc-paw-installer)
+
+- [ ] Duplicate from old version to new version
+- [ ] Make changes
+- [ ] Update version numbers in `installer.lua`, `pkg.lua`, and `manual.txt`
+- [ ] Merge `dev` branch into `gh-pages`
