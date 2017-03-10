@@ -12,7 +12,7 @@
     ["/lib/cc-paw.lua"] = "lib.lua",
     ["/lib/cc-paw-util.lua"] = "util.lua",
     ["/startup"] = "../common/startup.lua",
-    ["/autorun/fakeUnixFHS.lua"] = "../common/autorun.lua",
+    ["/autorun/fakeUnixFHS.lua"] = "../common/autorun.v2.lua",
     ["/usr/man/cc-paw"] = "manual.txt"
   },
   filesOnce = {
