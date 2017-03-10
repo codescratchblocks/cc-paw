@@ -45,8 +45,8 @@ will be written on the subject.
 - [ ] Update version number in src/manual.txt
 - [ ] Update version number in src/pkg.lua
 - [ ] Update changes.log
-- [ ] Update revision number in src/installer.lua (IF NEEDED)
 - [ ] Update CC-PAW.zip (IF NEEDED)
+- [ ] Update installer script on Pastebin (IF NEEDED)
 - [ ] Update example-package-info.lua (IF NEEDED)
 - [ ] Duplicate `src` into `releases/cc-paw/[version]`
 - [ ] Update version number in releases/packages.list
