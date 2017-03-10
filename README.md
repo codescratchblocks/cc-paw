@@ -38,3 +38,17 @@ itself, as well as any installed packages.
 For now, see the `example-package-info.lua` file in this repository, (and the
 releases here and packages repository), for examples. In the future, a guide
 will be written on the subject.
+
+### Release Checklist
+
+- [ ] Update version number in src/lib.lua
+- [ ] Update version number in src/manual.txt
+- [ ] Update version number in src/pkg.lua
+- [ ] Update changes.log
+- [ ] Update revision number in src/installer.lua (IF NEEDED)
+- [ ] Update CC-PAW.zip (IF NEEDED)
+- [ ] Update example-package-info.lua (IF NEEDED)
+- [ ] Duplicate `src` into `releases/cc-paw/[version]`
+- [ ] Update version number in releases/packages.list
+- [ ] Merge `dev` branch into `gh-pages`
+- [ ] Tag and draft release on GitHub. Remember to upload CC-PAW.zip!

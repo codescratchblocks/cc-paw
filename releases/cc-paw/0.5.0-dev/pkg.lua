@@ -5,7 +5,7 @@
   author = "Guard13007 <paul.liverman.iii@gmail.com>",
   license = "MIT",
   source = "https://github.com/cc-paw/cc-paw",
-  version = "0.5.0",
+  version = "0.5.0-dev",
   confVersion = 2,
   files = {
     ["/bin/cc-paw"] = "bin.lua",
