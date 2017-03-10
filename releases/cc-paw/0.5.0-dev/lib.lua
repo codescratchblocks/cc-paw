@@ -4,7 +4,7 @@ local p, e, a, script = util.p, util.e, util.a, util.script
 
 local ccpaw = {}
 
-ccpaw.v = v"0.5.0"
+ccpaw.v = v"0.5.0-dev"
 
 local sources = "/etc/cc-paw/sources.list"
 local sCache = "/var/cache/cc-paw/sources/"
