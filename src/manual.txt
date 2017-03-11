@@ -12,8 +12,8 @@ to facilitate easy re-install of CC-PAW.
 Usage:
 
  cc-paw install <package> [-f] [--force]
- cc-paw remove <package>
- cc-paw purge <package>
+ cc-paw remove <package> [-f]
+ cc-paw purge <package> [-f]
  cc-paw update
  cc-paw upgrade [-f] [--force]
  cc-paw [-v] [--version]
@@ -32,9 +32,15 @@ Remove:
  Removes specified <package>. Configuration files are left
  behind.
 
+ The -f and --force options force removal even if there
+ are incompatibilities.
+
 Purge:
 
  Removes all files for specified <package>.
+
+ The -f and --force options force purging even if there
+ are incompatibilities.
 
 Update:
 

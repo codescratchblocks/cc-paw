@@ -188,7 +188,8 @@ function ccpaw.install(pkgName, version, options)
     return true
 end
 
-function ccpaw.remove(pkgName)
+-- options.force (bool) will allow removal of required packages
+function ccpaw.remove(pkgName, options)
     if not fs.exists(iCache..pkgName) then
         e(pkgName.." not installed.")
     end
@@ -216,8 +217,9 @@ function ccpaw.remove(pkgName)
     return true
 end
 
-function ccpaw.purge(pkgName)
-    ccpaw.remove(pkgName)
+-- options.force (bool) will allow purging required packages
+function ccpaw.purge(pkgName, options)
+    ccpaw.remove(pkgName, options)
 
     p("Purging "..pkgName.."...")
 
