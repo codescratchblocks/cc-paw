@@ -189,6 +189,10 @@ function ccpaw.install(pkgName, version, options)
 end
 
 function ccpaw.remove(pkgName)
+    if not fs.exists(iCache..pkgName) then
+        e(pkgName.." not installed.")
+    end
+
     p("Removing "..pkgName.."...")
 
     local file = open(iCache..pkgName, 'r')
