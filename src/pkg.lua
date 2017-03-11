@@ -22,9 +22,10 @@
     ["semver"] = "1.2.1"
   },
   postpurge = [[
-    shell.run("rm", "/etc/cc-paw*")
-    shell.run("rm", "/var/cache/cc-paw*")
-    shell.run("rm", "/var/log/cc-paw*")
+    fs.delete("/etc/cc-paw")
+    fs.delete("/var/cache/cc-paw")
+    fs.delete("/var/log/cc-paw.log")
+    fs.delete("/var/log/cc-paw-errors.log")
     return 0
   ]]
 }

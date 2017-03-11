@@ -53,16 +53,7 @@ function util.script(pkg, sID, msg)
     if pkg[sID] then
         p("Running "..msg.." script...")
 
-        local tName = "/tmp/cc-"..tostring(math.random())
-        while fs.exists(tName) do
-            tName = "/tmp/cc-"..tostring(math.random())
-        end
-
-        local file = fs.open(tName, 'w')
-        file.write(pkg[sID])
-        file.close()
-
-        local ok, result, errMsg = pcall(shell.run, tName)
+        local ok, result, errMsg = pcall(loadstring(pkg[sID]))
 
         if not ok then
             e(msg..'" script errored: "'..result..'"\nAborting.')

@@ -189,6 +189,10 @@ function ccpaw.install(pkgName, version, options)
 end
 
 function ccpaw.remove(pkgName)
+    if not fs.exists(iCache..pkgName) then
+        e(pkgName.." not installed.")
+    end
+
     p("Removing "..pkgName.."...")
 
     local file = open(iCache..pkgName, 'r')
@@ -234,7 +238,9 @@ function ccpaw.purge(pkgName)
     fs.delete(rCache..pkgName)
 
     -- snippet to prevent cc-paw from writing files for itself after purging itself
-    if not (pkgName == "cc-paw") then
+    if pkgName == "cc-paw" then
+        print("cc-paw purged.")
+    else
         p(pkgName.." purged.")
     end
 
