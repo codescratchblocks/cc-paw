@@ -157,7 +157,7 @@ function ccpaw.install(pkgName, version, options)
 
     if package.files then
         for fName, location in pairs(package.files) do
-            if fs.exists(fName) then
+            if fs.exists(fName) and not options.force then
                 e(pkgName.." needs to install a file to \""..fName.."\" but that file exists. Installation aborted.")
             else
                 local data = get(root..pkgName.."/"..tostring(pkgVersion).."/"..location)
