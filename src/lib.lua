@@ -219,7 +219,9 @@ end
 
 -- options.force (bool) will allow purging required packages
 function ccpaw.purge(pkgName, options)
-    ccpaw.remove(pkgName, options)
+    if fs.exists(iCache..pkgName) then
+        ccpaw.remove(pkgName, options)
+    end
 
     p("Purging "..pkgName.."...")
 
