@@ -1,4 +1,4 @@
-ComputerCraft Package Administration Worker v0.5.0
+ComputerCraft Package Administration Worker v0.6.0
 
 Manages package installation, updates, and removals.
 
@@ -18,40 +18,33 @@ Usage:
  cc-paw upgrade [-f] [--force]
  cc-paw [-v] [--version]
 
+ The -f and --force options force actions even when
+ incompatibilities are detected.
+
+ The -v and --version options display the installed
+ version of CC-PAW.
+
 Install:
 
  Installs specified <package> if it exists in
  cc-paw's package list. To update the package list,
  run "cc-paw update".
 
- The -f and --force options force installation even
- if there are incompatibilities.
-
 Remove:
 
  Removes specified <package>. Configuration files are left
  behind.
 
- The -f and --force options force removal even if there
- are incompatibilities.
-
 Purge:
 
  Removes all files for specified <package>.
-
- The -f and --force options force purging even if there
- are incompatibilities.
 
 Update:
 
  Updates the package list on this computer with the
  list(s) specified in /etc/cc-paw/sources.list
 
-Upgrades:
+Upgrade:
 
- Upgrades cc-paw if it is out of date.
- OR
- Upgrades all packages that have newer versions available.
-
- The -f and --force options force installation even
- if there are incompatibilities.
+ Upgrades cc-paw if it is out of date. OR Upgrades all
+ packages that have newer versions available.

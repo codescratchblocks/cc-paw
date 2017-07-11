@@ -1,399 +1,384 @@
 local v = dofile "/lib/semver.lua"
 local util = dofile "/lib/cc-paw-util.lua"
-local p, e, a, script = util.p, util.e, util.a, util.script
+local p, e, a = util.p, util.e, util.a
 
-local ccpaw = {}
+local ccpaw = {
+  v = v"0.6.0",
+  verbose = false
+}
 
-ccpaw.v = v"0.5.0"
-
+local cache = "/var/cache/cc-paw/"
 local sources = "/etc/cc-paw/sources.list"
-local sCache = "/var/cache/cc-paw/sources/"
-local iCache = "/var/cache/cc-paw/installed/"
-local rCache = "/var/cache/cc-paw/removed/"
+local sCache = cache.."sources/"
+local iCache = cache.."installed/"
+local rCache = cache.."removed/"
+local dCache = cache.."provides/"
 
--- fs.open() with error messaging! :D
-local function open(file, mode)
-    return a(fs.open(file, mode), 'Could not open "'..file..'" in "'..mode..'" mode.')
+util.logFile = "/var/log/cc-paw.log"
+util.errFile = "/var/log/cc-paw-errors.log"
+
+local function read(file)
+  return a(fs.open(file,'r'), "Could not read "..file)
 end
 
--- wrapper to write a file
-local function write(fName, data)
-    --p("Writing to \"" .. fName .. "\"...") -- TODO if verbose!
-    local file = open(fName, 'w')
-    file.write(data)
-    file.close()
+function ccpaw.vlog(...)
+  if ccpaw.verbose then
+    p(...)
+  end
 end
 
--- get file content by URL
+local function write(file, data)
+  vlog("Writing to "..file)
+  file = fs.open(file, 'w')
+  file.write(data)
+  file.close()
+end
+
+-- get file content by http://, https://, or file://
 local function get(url)
-    --NOTE for now, assumes HTTP API must be used, in the future, local gets will be possible
-    local response = a(http.get(url, {["User-Agent"] = "cc-paw "..tostring(ccpaw.v)}), 'Error opening "' .. url .. '"')
-
+  local response
+  if (url:sub(1,7) == "http://") or (url:sub(1,8) == "https://") then
+    response = a(http.get(url, {["User-Agent"]="cc-paw "..tostring(ccpaw.v)}), "Error opening connection to "..url)
     local status = response.getResponseCode()
-    if status == 200 then
-        local result = response.readAll()
-        response.close()
-        return result
-    else
-        e('GET ' .. url .. ' : ' .. status)
+    if not (status == 200) then
+      e("GET "..url.." : "..status)
     end
+  elseif url:sub(1,7) == "file://" then
+    response = read(url:sub(8))
+  end
+
+  local result = response.readAll()
+  response.close()
+  return result
 end
 
--- install a package by its name
--- version is a string representing the version you want to install, optional
--- options.force (bool) will allow installation of incompatible updates
--- options.exact (bool) will force installation to attempt installing the exact specified version from whichever repo has a version
--- TODO make options.exact check other repos?
--- options.root (string) will allow specifying where to install from (NOTE partially implemented)
--- options.ignoreInst (bool) will ignore an already installed package instead of erroring
-function ccpaw.install(pkgName, version, options)
-    if version then
-        version = v(version)
+local function fpairs(tab, fn)
+  if tab then
+    for a,b in pairs(tab) do fn(a,b) end
+  end
+end
+
+local function script(str, name)
+  if str then
+    p("Running "..name.." script...")
+    util.script(str)
+  end
+end
+
+local function getPackageRootAndVersion(name, options)
+  local root, sLine, version
+  -- if options.root then
+  --   root = options.root
+  --   -- TODO get packages.list from root, parse and find our version
+  --   -- need to get a file, and read lines until we find our package and its version
+  --   local data = get(root.."/packages.list")
+  --   -- TODO write iterator for strings based on lines within them
+  -- else
+    p "Reading sources..."
+
+    for _, fName in ipairs(fs.list(sCache)) do
+      local file = read(sCache..fName)
+      local line = file.readLine()
+      --NOTE document how the first source found is returned
+      while line and line:len() > 0 do
+        if line:sub(1, line:find("=") - 1) == name then
+          sLine = fName -- remember that cache file names are also line number from sources.list
+          version = v(line:sub(line:find("=") + 1))
+          break
+        end
+        line = file.readLine()
+      end
+      file.close()
     end
 
-    if not options then
-        options = {}
+    a(sLine, "Package "..name..' not found.\n(Try "cc-paw update" first?)')
+
+    local file = read(sources)
+    for i=1,sLine do
+      root = file.readLine()
     end
+    file.close()
+  --end
 
-    if fs.exists(iCache..pkgName) then
-        if options.ignoreInst then
-            local file = open(iCache..pkgName, 'r')
-            local package = textutils.unserialize(file.readAll())
-            file.close()
+  return root, version
+end
 
-            if options.exact then
-                if v(package.version) == version then
-                    return true
-                else
-                    e("Package "..pkgName.." EXACT version "..tostring(version).." required, but v"..package.version.." installed.")
-                end
-            else
-                -- if our version is better or equal, and compatible..
-                if v(package.version) >= version and version ^ v(package.version) then
-                    return true
-                else
-                    e("Package "..pkgName.." v"..tostring(version).." required, but incompatible v"..package.version.." installed.")
-                end
-            end
+local function writeDependencyCache(pkg, ver)
+  local provides = {}
+  if fs.exists(dCache..pkg) then
+    local file = read(dCache..pkg)
+    provides = textutils.unserialize(file.readAll())
+    file.close()
+  end
+  provides[name] = ver
+  write(dCache..pkg, textutils.serialize(provides))
+end
 
+-- install package by name
+-- version is optional
+-- options.force (bool) will allow installation of incompatible versions
+-- options.exact (bool) will force installing specified version instead of trying to install compatible upgrades TODO not fully implemented
+-- options.root (string) allows specifying an alternate root to install from TODO fix/finish feature
+-- options.ignoreInst (bool) will ignore already installed packages instead of erroring
+function ccpaw.install(name, version, options)
+  if version then
+    version = v(version)
+  end
+  if not options then
+    options = {}
+  end
+
+  if fs.exists(iCache..name) then
+    if options.ignoreInst and version then --TODO document version is required with ignoreInst option
+      local file = read(iCache..name)
+      local package = textutils.unserialize(file.readAll())
+      file.close()
+
+      if options.exact then
+        if v(package.version) == version then
+          return true
         else
-            e("Package "..pkgName.." already installed.\n(Perhaps you meant to upgrade?)")
+          e("Package "..name.." EXACT version "..tostring(version).." required, but v"..package.version.." installed.")
         end
-    end
+      else
+        if v(package.version) >= version and version ^ v(package.version) then
+          return true
+        else
+          e("Package "..name.." v"..tostring(version).." required, but incompatible v"..package.version.." installed.")
+        end
+      end
 
-    --TODO this whole section should be abstracted into root, pkgVersion = getRootAndVersion(pkgName, version, options)
-    -- root to grab files from, line of sources to read from, package version to install
-    local root, sLine, pkgVersion
-
-    if options.root then
-        root = options.root
-
-        -- TODO get packages.list from root, parse and find our pkgVersion
-        -- need to get a file, and read lines until we find our package and its version
-        local data = get(root .. "/packages.list")
-        -- TODO write iterator for strings based on lines within them
     else
-        p "Reading sources..."
-
-        for _, fName in ipairs(fs.list(sCache)) do
-            local file = open(sCache .. fName, 'r')
-
-            local line = file.readLine()
-            --NOTE see how a source lower in the sources list is chosen over one higher in the list !
-            while line and line:len() > 0 do
-                if line:sub(1, line:find("=")-1) == pkgName then
-                    sLine = fName -- this file name is the line number it came from in sources
-                    pkgVersion = v(line:sub(line:find("=")+1))
-                    break
-                end
-                line = file.readLine()
-            end
-
-            file.close()
-        end
-
-        a(sLine, 'Package '..pkgName..' not found.\n(Try "cc-paw update" first?)')
-
-        local file = open(sources, 'r')
-        for i=1,sLine do
-            root = file.readLine()
-        end
-        file.close()
+      e("Package "..name.." already installed.\n(Perhaps you meant to upgrade?)")
     end
+  end
 
-    if options.exact then
-        pkgVersion = version
+  local root, pkgVersion = getPackageRootAndVersion(name, options)
+
+  if options.exact then
+    --TODO somehow we need to choose a different version than what getPackageRootAndVersion() selected
+    -- this also involves selecting a different root potentially
+    pkgVersion = version
+    -- super lazy right now assumes the root is valid
+  end
+
+  -- if asking for specific version, selected version is not an upgrade of that version, and not force-installing..
+  if version and not version ^ pkgVersion and not options.force then
+    e(name.." v"..tostring(version).." requested, but only v"..tostring(pkgVersion).." is available, and not compatible.")
+  end
+
+  p("Getting package info ("..name..")...")
+
+  local data = get(root..name.."/"..tostring(pkgVersion).."pkg.lua") --TODO I really feel like pkg.lua should be package.lua
+  local package = textutils.unserialize(data)
+
+  a(package.confVersion > 1, "Version 1 package configurations are not supported. Please contact the package maintainer.")
+  a(package.confVersion == 2, "You must upgrade cc-paw to install this package.")
+
+  if package.depends or package.dependsExact then
+    p("Installing dependencies for "..name)
+    fpairs(package.depends, function(pkg, ver)
+      ccpaw.install(pkg, ver, {ignoreInst=true,force=options.force})
+      writeDependencyCache(pkg, true)
+    end)
+    fpairs(package.dependsExact, function(pkg, ver)
+      ccpaw.install(pkg, ver, {exact=true,ignoreInst=true,force=options.force})
+      writeDependencyCache(pkg, ver)
+    end)
+  end
+
+  p("Installing "..name)
+  script(package.preinst, "pre-install")
+
+  fpairs(package.files, function(file, source)
+    if fs.exists(file) and not options.force then
+      e(name..' needs to install a file to "'..file..'" but that file exists. Installation aborted.')
+    else
+      write(file, get(root..name.."/"..tostring(pkgVersion).."/"..source))
+  end)
+  fpairs(package.filesOnce, function(file, source)
+    if not fs.exists(file) then
+      write(file, get(root..name.."/"..tostring(pkgVersion).."/"..source))
     end
+  end)
 
-    if version and not version ^ pkgVersion and not options.force then
-        e(pkgName.." v"..tostring(version).." requested, but only v"..tostring(pkgVersion).." is available, and not compatible.")
-    end
+  script(package.postinst, "post-install")
 
-    p("Getting package info ("..pkgName..")...")
+  package.preinst = nil
+  package.postinst = nil
+  write(iCache..name, textutils.serialize(package))
+  if fs.exists(rCache..name) then
+    fs.delete(rCache..name)
+  end
 
-    local pkgData = get(root..pkgName.."/"..tostring(pkgVersion).."/pkg.lua")
-    local package = textutils.unserialize(pkgData)
-
-    a(package.confVersion > 1, "Version 1 package configurations are not supported. Please contact the package maintainer.")
-    a(package.confVersion == 2, "You must upgrade cc-paw to install this package.")
-
-    if package.depends then
-        p("Installing dependencies for "..pkgName.."...")
-        for pkg, vers in pairs(package.depends) do
-            ccpaw.install(pkg, vers, {ignoreInst = true, force = options.force})
-        end
-    end
-
-    if package.dependsExact then
-        p("Installing dependencies for "..pkgName.."...")
-        for pkg, vers in pairs(package.dependsExact) do
-            ccpaw.install(pkg, vers, {exact = true, ignoreInst = true, force = options.force})
-        end
-    end
-
-    p("Installing "..pkgName.."...")
-
-    script(package, "preinst", "pre-install")
-
-    if package.files then
-        for fName, location in pairs(package.files) do
-            if fs.exists(fName) and not options.force then
-                e(pkgName.." needs to install a file to \""..fName.."\" but that file exists. Installation aborted.")
-            else
-                local data = get(root..pkgName.."/"..tostring(pkgVersion).."/"..location)
-                write(fName, data)
-            end
-        end
-    end
-
-    if package.filesOnce then
-        for fName, location in pairs(package.filesOnce) do
-            -- filesOnce are allowed to exist because they may be left over from a removed package
-            if not fs.exists(fName) then
-                local data = get(root..pkgName.."/"..tostring(pkgVersion).."/"..location)
-                write(fName, data)
-            end
-        end
-    end
-
-    script(package, "postinst", "post-install")
-
-    write(iCache..pkgName, pkgData)
-    if fs.exists(rCache..pkgName) then
-        fs.delete(rCache..pkgName)
-    end
-
-    p(pkgName.." installed.")
-
-    return true
+  return true
 end
 
 -- options.force (bool) will allow removal of required packages
-function ccpaw.remove(pkgName, options)
-    if not fs.exists(iCache..pkgName) then
-        e(pkgName.." not installed.")
-    end
+function ccpaw.remove(name, options)
+  if not fs.exists(iCache..name) then
+    e(name.." not installed.")
+  end
 
-    p("Removing "..pkgName.."...")
+  --TODO check for dependency info!!
+  local file = read(dCache..name)
+  local provides = textutils.unserialize(file.readAll())
+  file.close()
 
-    local file = open(iCache..pkgName, 'r')
-    local package = textutils.unserialize(file.readAll())
-    file.close()
+  if not options.force then
+    fpairs(provides, function(pkg, ver)
+      if fs.exists(iCache..pkg) then
+        e(name.." is required for "..pkg)
+      end
+    end)
+  end
 
-    script(package, "prerm", "pre-remove")
+  p("Removing "..name)
 
-    if package.files then
-        for fName, _ in pairs(package.files) do
-            fs.delete(fName)
-        end
-    end
+  local file = read(iCache..name)
+  local package = textutils.unserialize(file.readAll())
+  file.close()
 
-    script(package, "postrm", "post-remove")
+  script(package.prerm, "pre-remove")
 
-    fs.move(iCache..pkgName, rCache..pkgName)   -- now is a removed package
+  fpairs(package.files, function(file)
+    fs.delete(file)
+  end)
 
-    p(pkgName.." removed.")
+  script(package.postrm, "post-remove")
 
-    return true
+  package.prerm = nil
+  package.postrm = nil
+  package.files = nil
+  fs.delete(iCache..name)
+  fs.delete(dCache..name) --NOTE does this error if it doesn't exist?
+  write(rCache..name, textutils.serialize(package))
+
+  p(name.." removed.")
+  return true
 end
 
 -- options.force (bool) will allow purging required packages
-function ccpaw.purge(pkgName, options)
-    if fs.exists(iCache..pkgName) then
-        ccpaw.remove(pkgName, options)
+function ccpaw.purge(name, options)
+  if fs.exists(iCache..name) then
+    if not ccpaw.remove(name, options) then
+      return false
     end
+  end
 
-    p("Purging "..pkgName.."...")
+  p("Purging "..name)
 
-    local file = open(rCache..pkgName, 'r')
-    local package = textutils.unserialize(file.readAll())
-    file.close()
+  local file = read(rCache..name)
+  local package = textutils.unserialize(file.readAll())
+  file.close()
 
-    script(package, "prepurge", "pre-purge")
+  script(package.prepurge, "pre-purge")
 
-    if package.filesOnce then
-        for fName, _ in pairs(package.filesOnce) do
-            fs.delete(fName)
-        end
-    end
+  fpairs(package.filesOnce, function(file)
+    fs.delete(file)
+  end)
 
-    script(package, "postpurge", "post-purge")
+  script(package.postpurge, "post-purge")
 
-    fs.delete(rCache..pkgName)
+  fs.delete(rCache..name)
 
-    -- snippet to prevent cc-paw from writing files for itself after purging itself
-    if pkgName == "cc-paw" then
-        print("cc-paw purged.")
-    else
-        p(pkgName.." purged.")
-    end
+  -- prevents cc-paw from writing files after purging itself
+  if name == "cc-paw" then
+    print("cc-paw purged.")
+  else
+    p(name.." purged.")
+  end
 
-    return true
+  return true
 end
 
-function ccpaw.update()   --TODO allow specifying a line number to update from ?
-    p "Updating sources..."
+--TODO allow specifying a line number to update only that source ?
+function ccpaw.update()
+  p "Updating sources..."
 
-    local file = open(sources, 'r')
+  local file = read(sources)
 
-    local line = file.readLine()
-    local cFile = 1   -- cache file names are their line in sources
+  local line = file.readLine()
+  local cFile = 1   -- cache file names are their line number from sources.list
 
-    while line and line:len() > 0 do
-        local data = get(line.."/packages.list")
-        write(sCache..cFile, data)
+  while line and line:len() > 0 do
+    local data = get(line.."/packages.list")
+    write(sCache..cFile, data)
 
-        line = file.readLine()
-        cFile = cFile + 1
-    end
+    line = file.readLine()
+    cFile = cFile + 1
+  end
 
-    file.close()
+  file.close()
 
-    p "Done."
-
-    return true
+  return true
 end
 
---TODO upgrades need to prevent upgrading of packages where an exact version is depended on by another package
---TODO upgrades need to be smart enough to complete system wide incompatible upgrades
--- installs available and compatible upgrades
--- options.force (bool) will allow installation of incompatible updates
-function ccpaw.upgrade(pkgName, options)
-    if not options then
-        options = {}
+--TODO prevent upgrading packages required to be an exact version
+--TODO system wide incompatible upgrades
+-- installs available, compatible upgrades
+-- options.force (bool) will allow installation of incompatible upgrades
+function ccpaw.upgrade(name, options)
+  if not options then
+    options = {}
+  end
+
+  if not name then
+    p "Upgrading all packages."
+    for _, package in ipairs(fs.list(iCache)) do
+      ccpaw.upgrade(package)
     end
+    p "Upgrades complete."
+    return true
+  end
 
-    if not pkgName then
-        p "Upgrading all packages."
+  local root, version = getPackageRootAndVersion(name, options)
+  local file = read(iCache..name)
+  local data = file.readAll()
+  local package = textutils.unserialize(data)
+  file.close()
 
-        for _, package in ipairs(fs.list(iCache)) do
-            ccpaw.upgrade(package)
+  if version == v(package.version) then
+    return false
+  else
+    -- if upgradable or forced
+    if v(package.version) ^ version or options.force then
+
+      if package.depends or package.dependsExact then
+        p("Checking dependencies for "..name)
+        fpairs(package.depends, function(pkg, ver)
+          ccpaw.install(pkg, ver, {ignoreInst=true,force=options.force})
+        end)
+        fpairs(package.dependsExact, function(pkg, ver)
+          ccpaw.install(pkg, ver, {exact=true,ignoreInst=true,force=options.force})
+        end)
+      end
+
+      p("Upgrading "..name)
+      script(package.preupgd, "pre-upgrade")
+
+      fpairs(package.files, function(file, source)
+        write(file, get(root..name.."/"..tostring(version).."/"..location))
+      end)
+      fpairs(package.filesOnce, function(file, source)
+        if not fs.exists(file) then
+          write(file, get(root..name.."/"..tostring(version).."/"..location))
         end
+      end)
 
-        p "Upgrades complete."
+      script(package.postupgd, "post-upgrade")
+      write(iCache..name, data)
+      p(name.." upgraded.")
 
-        return true
-    end
-
-    -- NOTE this is a literal copy from another part of this code, fix this !
-    -- NOTE literal copy is from the beginning of the installer code
-    p "Reading sources..."
-    -- root to grab files from, line of sources to read from, package version to install
-    local root, sLine, pkgVersion
-
-    for _, fName in ipairs(fs.list(sCache)) do
-        local file = open(sCache .. fName, 'r')
-
-        local line = file.readLine()
-        --NOTE see how a source lower in the sources list is chosen over one higher in the list !
-        while line and line:len() > 0 do
-            if line:sub(1, line:find("=")-1) == pkgName then
-                sLine = fName -- this file name is the line number it came from in sources
-                pkgVersion = v(line:sub(line:find("=")+1))
-            end
-            line = file.readLine()
-        end
-
-        file.close()
-    end
-
-    a(sLine, 'Package '..pkgName..' not found.\n(Try "cc-paw update" first?)')
-    -- END where I literally copied from
-
-    local file = open(sources, 'r')
-    for i=1,sLine do
-        root = file.readLine()
-    end
-    file.close()
-
-    local file = open(iCache..pkgName, 'r')
-    local pkgData = file.readAll()
-    local package = textutils.unserialize(pkgData)
-    file.close()
-
-    if pkgVersion == v(package.version) then
-        return false
+      return true
     else
-        if v(package.version) ^ pkgVersion or options.force then
-
-            -- Almost completely copied massive section
-            if package.depends then
-                p("Checking dependencies for "..pkgName.."...")
-                for pkg, vers in pairs(package.depends) do
-                    ccpaw.install(pkg, vers, {ignoreInst = true, force = options.force})
-                end
-            end
-
-            if package.dependsExact then
-                p("Checking dependencies for "..pkgName.."...")
-                for pkg, vers in pairs(package.dependsExact) do
-                    ccpaw.install(pkg, vers, {exact = true, ignoreInst = true, force = options.force})
-                end
-            end
-
-            p("Upgrading "..pkgName.."...")
-
-            script(package, "preupgd", "pre-upgrade")
-
-            if package.files then
-                for fName, location in pairs(package.files) do
-                    local data = get(root..pkgName.."/"..tostring(pkgVersion).."/"..location)
-                    write(fName, data)
-                end
-            end
-
-            if package.filesOnce then
-                for fName, location in pairs(package.filesOnce) do
-                    if not fs.exists(fName) then
-                        local data = get(root..pkgName.."/"..tostring(pkgVersion).."/"..location)
-                        write(fName, data)
-                    end
-                end
-            end
-
-            -- NOTE abstraction idea
-            --f(package.filesOnce, function(fName, location)
-            --    if not fs.exists(fName) then
-            --        shit
-            --    end
-            --end)
-
-            script(package, "postupgd", "post-upgrade")
-
-            write(iCache..pkgName, pkgData)
-
-            p(pkgName.." upgraded.")
-            -- End almost completely copied massive section.
-
-            return true
-        else
-            -- the only error that doesn't actually error, because this needs to be acceptable within a loop of upgrades
-            -- (both for cc-paw alpha versions to upgrade, and for allowing a system to update as much as possible within supported versions)
-            -- NOTE current mechanisms do not allow for a host to store info of multiple package versions available..this should be fixed, so latest compatible version can be installed...
-            p("Package "..pkgName.." held at v"..package.version.." because update candidate is incompatible v"..tostring(pkgVersion))
-            return false
-        end
+      -- this "error" uses print because it needs to be acceptable within a loop of upgrades
+      --NOTE current mechanisms do not allow for a host to store info of multiple versions available
+      --      this can be a problem in the future...
+      p("Package "..name.." hend at v"..package.version.." because update candidate is incompatible v"..tostring(version))
+      return false
     end
+  end
 end
 
 return ccpaw
