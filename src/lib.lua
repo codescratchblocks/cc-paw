@@ -21,6 +21,13 @@ local function read(file)
   return a(fs.open(file,'r'), "Could not read "..file)
 end
 
+local function readAll(file)
+  file = read(file)
+  local result = file.readAll()
+  file.close()
+  return result
+end
+
 function ccpaw.vlog(...)
   if ccpaw.verbose then
     p(...)
@@ -106,9 +113,7 @@ end
 local function writeDependencyCache(pkg, ver)
   local provides = {}
   if fs.exists(dCache..pkg) then
-    local file = read(dCache..pkg)
-    provides = textutils.unserialize(file.readAll())
-    file.close()
+    provides = textutils.unserialize(readAll(dCache..pkg))
   end
   provides[name] = ver
   write(dCache..pkg, textutils.serialize(provides))
@@ -130,9 +135,7 @@ function ccpaw.install(name, version, options)
 
   if fs.exists(iCache..name) then
     if options.ignoreInst and version then --TODO document version is required with ignoreInst option
-      local file = read(iCache..name)
-      local package = textutils.unserialize(file.readAll())
-      file.close()
+      local package = textutils.unserialize(readAll(iCache..name))
 
       if options.exact then
         if v(package.version) == version then
@@ -169,8 +172,8 @@ function ccpaw.install(name, version, options)
 
   p("Getting package info ("..name..")...")
 
-  local data = get(root..name.."/"..tostring(pkgVersion).."pkg.lua") --TODO I really feel like pkg.lua should be package.lua
-  local package = textutils.unserialize(data)
+  --TODO I really feel like pkg.lua should be package.lua
+  local package = textutils.unserialize(get(root..name.."/"..tostring(pkgVersion).."pkg.lua"))
 
   a(package.confVersion > 1, "Version 1 package configurations are not supported. Please contact the package maintainer.")
   a(package.confVersion == 2, "You must upgrade cc-paw to install this package.")
@@ -216,15 +219,12 @@ end
 
 -- options.force (bool) will allow removal of required packages
 function ccpaw.remove(name, options)
+  -- is it installed?
   if not fs.exists(iCache..name) then
     e(name.." not installed.")
   end
-
-  --TODO check for dependency info!!
-  local file = read(dCache..name)
-  local provides = textutils.unserialize(file.readAll())
-  file.close()
-
+  -- check that nothing depends on it
+  local provides = textutils.unserialize(readAll(dCache..name))
   if not options.force then
     fpairs(provides, function(pkg, ver)
       if fs.exists(iCache..pkg) then
@@ -235,9 +235,7 @@ function ccpaw.remove(name, options)
 
   p("Removing "..name)
 
-  local file = read(iCache..name)
-  local package = textutils.unserialize(file.readAll())
-  file.close()
+  local package = textutils.unserialize(readAll(iCache..name))
 
   script(package.prerm, "pre-remove")
 
@@ -268,16 +266,12 @@ function ccpaw.purge(name, options)
 
   p("Purging "..name)
 
-  local file = read(rCache..name)
-  local package = textutils.unserialize(file.readAll())
-  file.close()
+  local package = textutils.unserialize(readAll(rCache..name))
 
   script(package.prepurge, "pre-purge")
-
   fpairs(package.filesOnce, function(file)
     fs.delete(file)
   end)
-
   script(package.postpurge, "post-purge")
 
   fs.delete(rCache..name)
@@ -316,6 +310,7 @@ end
 
 --TODO prevent upgrading packages required to be an exact version
 --TODO system wide incompatible upgrades
+--TODO see if any common code between this and install can be broken out
 -- installs available, compatible upgrades
 -- options.force (bool) will allow installation of incompatible upgrades
 function ccpaw.upgrade(name, options)
@@ -333,10 +328,7 @@ function ccpaw.upgrade(name, options)
   end
 
   local root, version = getPackageRootAndVersion(name, options)
-  local file = read(iCache..name)
-  local data = file.readAll()
-  local package = textutils.unserialize(data)
-  file.close()
+  local package = textutils.unserialize(readAll(iCache..name))
 
   if version == v(package.version) then
     return false
@@ -367,7 +359,6 @@ function ccpaw.upgrade(name, options)
       end)
 
       script(package.postupgd, "post-upgrade")
-      write(iCache..name, data)
       p(name.." upgraded.")
 
       return true
