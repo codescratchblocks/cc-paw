@@ -219,6 +219,10 @@ end
 
 -- options.force (bool) will allow removal of required packages
 function ccpaw.remove(name, options)
+  if (name == "cc-paw") and not options.force then
+    e "Use -f to remove cc-paw."
+  end
+
   -- is it installed?
   if not fs.exists(iCache..name) then
     e(name.." not installed.")
