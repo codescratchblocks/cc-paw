@@ -198,6 +198,7 @@ function ccpaw.install(name, version, options)
       e(name..' needs to install a file to "'..file..'" but that file exists. Installation aborted.')
     else
       write(file, get(root..name.."/"..tostring(pkgVersion).."/"..source))
+    end
   end)
   fpairs(package.filesOnce, function(file, source)
     if not fs.exists(file) then
