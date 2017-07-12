@@ -1,0 +1,21 @@
+Potential refactor?
+ How many times is read() called, followed immediately by reading all data and closing the file?
+ Might be worth abstracting.
+
+Once I have 0.6.0 ready to go, delete all older versions before releasing it.
+0.6.0 needs to at least have that capability for finding multiple versions of a package on a root
+
+packages.list
+{
+  package_name = "path_to",
+}
+versions.list
+{
+  ["0.2.1"] = {
+    "0.1.0", "1.0.0", "1.1.9"
+  },
+  ["0.2.2"] = {
+    "1.1.9", "1.2.0"
+  }
+}
+path_to/1.1.9/package.lua -> specific
