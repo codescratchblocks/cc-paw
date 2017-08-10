@@ -5,5 +5,5 @@ help.setPath(help.path()..':/usr/man')
 shell.setAlias("man", "help")
 -- remove temporary files
 if fs.isDir("/tmp") then
- shell.run("rm", "/tmp/*")
+  shell.run("rm", "/tmp/*")
 end
